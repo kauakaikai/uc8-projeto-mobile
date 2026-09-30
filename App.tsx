@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { CartaoPet } from './src/components/CartaoPet';
 import { FormularioPet, type DadosPet } from './src/components/FormularioPet';
 import type { Pet } from './src/types/entidades';
@@ -25,11 +25,12 @@ export default function App() {
     <View style={estilos.tela}>
       <Text style={estilos.cabecalho}>Pets</Text>
       <FormularioPet aoAdicionar={adicionar} />
-      <ScrollView>
-        {pets.map((pet) => (
-          <CartaoPet key={pet.id} pet={pet} />
-        ))}
-      </ScrollView>
+      <FlatList
+        data={pets}
+        keyExtractor={(pet) => String(pet.id)}
+        renderItem={({ item }) => <CartaoPet pet={item} />}
+        ListEmptyComponent={<Text>Nenhum pet cadastrado.</Text>}
+      />
     </View>
   );
 }
