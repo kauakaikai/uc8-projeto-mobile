@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { CartaoPet } from './src/components/CartaoPet';
 import { FormularioPet, type DadosPet } from './src/components/FormularioPet';
 import { carregarPets } from './src/services/pets';
@@ -7,10 +7,12 @@ import type { Pet } from './src/types/entidades';
 
 export default function App() {
   const [pets, setPets] = useState<Pet[]>([]);
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     carregarPets().then((resultado) => {
       setPets(resultado);
+      setCarregando(false);
     });
   }, []);
 
@@ -20,6 +22,15 @@ export default function App() {
       { id: proximoId, nome: dados.nome, especie: 'outro', raca: dados.raca || undefined, clienteId: 1 },
       ...pets,
     ]);
+  }
+
+  if (carregando) {
+    return (
+      <View style={estilos.centro}>
+        <ActivityIndicator size="large" />
+        <Text>Carregando os pets...</Text>
+      </View>
+    );
   }
 
   return (
@@ -38,5 +49,6 @@ export default function App() {
 
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: '#F6F8FA', paddingTop: 48, paddingHorizontal: 16 },
+  centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   cabecalho: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
 });
