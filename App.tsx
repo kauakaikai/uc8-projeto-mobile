@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { CartaoPet } from './src/components/CartaoPet';
 import { FormularioPet, type DadosPet } from './src/components/FormularioPet';
+import { carregarPets } from './src/services/pets';
 import type { Pet } from './src/types/entidades';
 
-const petsIniciais: Pet[] = [
-  { id: 1, nome: 'Rex', especie: 'cachorro', raca: 'Vira-lata', clienteId: 1 },
-  { id: 2, nome: 'Mimi', especie: 'gato', clienteId: 2 },
-  { id: 3, nome: 'Piu', especie: 'ave', raca: 'Calopsita', clienteId: 1 },
-];
-
 export default function App() {
-  const [pets, setPets] = useState<Pet[]>(petsIniciais);
+  const [pets, setPets] = useState<Pet[]>([]);
+
+  useEffect(() => {
+    carregarPets().then((resultado) => {
+      setPets(resultado);
+    });
+  }, []);
 
   function adicionar(dados: DadosPet) {
     const proximoId = pets.reduce((maior, atual) => Math.max(maior, atual.id), 0) + 1;
