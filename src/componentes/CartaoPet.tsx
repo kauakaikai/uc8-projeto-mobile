@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { Pet } from '../types/entidades';
+import type { Pet } from '../tipos/entidades';
 
 interface CartaoPetProps {
   pet: Pet;

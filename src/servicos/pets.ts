@@ -1,4 +1,4 @@
-import type { Pet } from '../types/entidades';
+import type { Pet } from '../tipos/entidades';
 
 const pets: Pet[] = [
   { id: 1, nome: 'Rex', especie: 'cachorro', raca: 'Vira-lata', clienteId: 1 },
