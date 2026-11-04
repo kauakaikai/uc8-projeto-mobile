@@ -1,6 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { RotasDaPilha } from './src/navegacao/Tipos';
+import type { RotasDaPilha } from './src/navegacao/tipos';
 import { TelaDetalhePet } from './src/telas/TelaDetalhePet';
 import { TelaPets } from './src/telas/TelaPets';
 
