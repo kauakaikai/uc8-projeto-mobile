@@ -12,8 +12,17 @@ export function carregarPets(): Promise<Pet[]> {
   });
 }
 
-export function guardarPet(pet: Pet): void {
-  pets = [pet, ...pets];
+export function incluirPet(dados: { nome: string; raca: string }): Pet {
+  const proximoId = pets.reduce((maior, atual) => Math.max(maior, atual.id), 0) + 1;
+  const novo: Pet = {
+    id: proximoId,
+    nome: dados.nome,
+    especie: 'outro',
+    raca: dados.raca || undefined,
+    clienteId: 1,
+  };
+  pets = [novo, ...pets];
+  return novo;
 }
 
 export function buscarPet(id: number): Promise<Pet | undefined> {

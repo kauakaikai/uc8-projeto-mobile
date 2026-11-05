@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RotasDaPilha } from '../navegacao/Tipos';
+import type { RotasDaPilha } from '../navegacao/tipos';
 import { buscarPet } from '../servicos/pets';
 import type { Pet } from '../tipos/entidades';
 

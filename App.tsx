@@ -1,18 +1,18 @@
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { RotasDaPilha } from './src/navegacao/tipos';
-import { TelaDetalhePet } from './src/telas/TelaDetalhePet';
-import { TelaPets } from './src/telas/TelaPets';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { PilhaPets } from './src/navegacao/pilhaspets';
+import type { RotasDasAbas } from './src/navegacao/tipos';
+import { TelaSobre } from './src/telas/TelaSobre';
 
-const Pilha = createNativeStackNavigator<RotasDaPilha>();
+const Abas = createBottomTabNavigator<RotasDasAbas>();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Pilha.Navigator>
-        <Pilha.Screen name="Pets" component={TelaPets} />
-        <Pilha.Screen name="DetalhePet" component={TelaDetalhePet} options={{ title: 'Detalhe do pet' }} />
-      </Pilha.Navigator>
+      <Abas.Navigator>
+        <Abas.Screen name="AbaPets" component={PilhaPets} options={{ title: 'Pets', headerShown: false }} />
+        <Abas.Screen name="AbaSobre" component={TelaSobre} options={{ title: 'Sobre' }} />
+      </Abas.Navigator>
     </NavigationContainer>
   );
 }

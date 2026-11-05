@@ -1,68 +1,76 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CartaoPet } from '../componentes/CartaoPet';
-import { FormularioPet, type DadosPet } from '../componentes/FormularioPet';
+import type { RotasDaPilha } from '../navegacao/tipos';
 import { carregarPets } from '../servicos/pets';
 import type { Pet } from '../tipos/entidades';
 
-export function TelaPets() {
+type TelaPetsProps = NativeStackScreenProps<RotasDaPilha, 'Pets'>;
+
+export function TelaPets({ navigation }: TelaPetsProps) {
   const [pets, setPets] = useState<Pet[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [tentativa, setTentativa] = useState(0);
 
-  useEffect(() => {
-    let cancelado = false;
-    setCarregando(true);
-    carregarPets().then((resultado) => {
-      if (cancelado) {
-        return;
-      }
-      setPets(resultado);
-      setCarregando(false);
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, [tentativa]);
-
-  function adicionar(dados: DadosPet) {
-    const proximoId = pets.reduce((maior, atual) => Math.max(maior, atual.id), 0) + 1;
-    setPets([
-      { id: proximoId, nome: dados.nome, especie: 'outro', raca: dados.raca || undefined, clienteId: 1 },
-      ...pets,
-    ]);
-  }
+  // Recarrega sempre que a tela volta ao foco (ao voltar do cadastro, o pet novo aparece).
+  useFocusEffect(
+    useCallback(() => {
+      let cancelado = false;
+      setCarregando(true);
+      carregarPets().then((resultado) => {
+        if (cancelado) {
+          return;
+        }
+        setPets(resultado);
+        setCarregando(false);
+      });
+      return () => {
+        cancelado = true;
+      };
+    }, [tentativa]),
+  );
 
   return (
     <View style={estilos.tela}>
-      <Text style={estilos.cabecalho}>Pets</Text>
-      <Pressable style={estilos.botao} onPress={() => setTentativa(tentativa + 1)}>
-        <Text style={estilos.textoBotao}>Recarregar</Text>
-      </Pressable>
+      <View style={estilos.barra}>
+        <Pressable style={estilos.botao} onPress={() => setTentativa(tentativa + 1)}>
+          <Text style={estilos.textoBotao}>Recarregar</Text>
+        </Pressable>
+        <Pressable style={estilos.botao} onPress={() => navigation.navigate('NovoPet')}>
+          <Text style={estilos.textoBotao}>Novo pet</Text>
+        </Pressable>
+      </View>
       {carregando ? (
         <View style={estilos.centro}>
           <ActivityIndicator size="large" />
           <Text>Carregando os pets...</Text>
         </View>
       ) : (
-        <>
-          <FormularioPet aoAdicionar={adicionar} />
-          <FlatList
-            data={pets}
-            keyExtractor={(pet) => String(pet.id)}
-            renderItem={({ item }) => <CartaoPet pet={item} />}
-            ListEmptyComponent={<Text>Nenhum pet cadastrado.</Text>}
-          />
-        </>
+        <FlatList
+          data={pets}
+          keyExtractor={(pet) => String(pet.id)}
+          renderItem={({ item }) => (
+            <View>
+              <CartaoPet pet={item} />
+              <Pressable onPress={() => navigation.navigate('DetalhePet', { id: item.id })}>
+                <Text style={estilos.detalhes}>Ver detalhes</Text>
+              </Pressable>
+            </View>
+          )}
+          ListEmptyComponent={<Text>Nenhum pet cadastrado.</Text>}
+        />
       )}
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#F6F8FA', paddingTop: 48, paddingHorizontal: 16 },
+  tela: { flex: 1, backgroundColor: '#F6F8FA', padding: 16 },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  cabecalho: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
-  botao: { backgroundColor: '#004A8D', borderRadius: 6, padding: 12, alignItems: 'center', marginBottom: 16 },
+  barra: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  botao: { flex: 1, backgroundColor: '#004A8D', borderRadius: 6, padding: 12, alignItems: 'center' },
   textoBotao: { color: '#fff', fontWeight: 'bold' },
+  detalhes: { color: '#004A8D', fontWeight: 'bold', marginBottom: 16 },
 });
