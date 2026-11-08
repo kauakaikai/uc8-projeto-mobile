@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useState } from "react";
+import { StyleSheet, View } from "react-native";
+import { Botao } from "./Botao";
+import { Campo } from "./Campo";
+import { espacos } from "../tema/tema";
 
 export interface DadosPet {
   nome: string;
@@ -11,39 +14,38 @@ interface FormularioPetProps {
 }
 
 export function FormularioPet({ aoAdicionar }: FormularioPetProps) {
-  const [nome, setNome] = useState('');
-  const [raca, setRaca] = useState('');
+  const [nome, setNome] = useState("");
+  const [raca, setRaca] = useState("");
+  const [tocado, setTocado] = useState(false);
+
+  const nomeVazio = nome.trim() === "";
+  const erroNome = tocado && nomeVazio ? "Informe o nome" : undefined;
+
+  function mudarNome(texto: string) {
+    setTocado(true);
+    setNome(texto);
+  }
 
   function enviar() {
-    aoAdicionar({ nome, raca });
-    setNome('');
-    setRaca('');
+    // O formulário não conhece a lista: quem a guarda define o id.
+    aoAdicionar({ nome: nome.trim(), raca });
+    setNome("");
+    setRaca("");
+    setTocado(false);
   }
 
   return (
     <View style={estilos.formulario}>
-      <TextInput
-        style={estilos.campo}
-        placeholder="Nome"
-        value={nome}
-        onChangeText={setNome}
-      />
-      <TextInput
-        style={estilos.campo}
-        placeholder="Raça (opcional)"
-        value={raca}
-        onChangeText={setRaca}
-      />
-      <Pressable style={estilos.botao} onPress={enviar}>
-        <Text style={estilos.textoBotao}>Adicionar</Text>
-      </Pressable>
+      <Campo rotulo="Nome" valor={nome} aoMudar={mudarNome} erro={erroNome} />
+      <Campo rotulo="Raça (opcional)" valor={raca} aoMudar={setRaca} />
+      <View style={estilos.acoes}>
+        <Botao titulo="Adicionar" onPress={enviar} desabilitado={nomeVazio} />
+      </View>
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
-  formulario: { marginBottom: 16 },
-  campo: { backgroundColor: '#fff', borderRadius: 6, padding: 10, marginBottom: 8 },
-  botao: { backgroundColor: '#004A8D', borderRadius: 6, padding: 12, alignItems: 'center' },
-  textoBotao: { color: '#fff', fontWeight: 'bold' },
+  formulario: { marginBottom: espacos.md },
+  acoes: { flexDirection: "row", marginTop: espacos.sm },
 });

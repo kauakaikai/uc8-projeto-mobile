@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RotasDaPilha } from '../navegacao/tipos';
-import { buscarPet } from '../servicos/pets';
-import type { Pet } from '../tipos/entidades';
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { RotasDaPilha } from "../navegacao/tipos";
+import { buscarPet } from "../servicos/pets";
+import { cores, espacos } from "../tema/tema";
+import type { Pet } from "../tipos/entidades";
 
-type TelaDetalhePetProps = NativeStackScreenProps<RotasDaPilha, 'DetalhePet'>;
+type TelaDetalhePetProps = NativeStackScreenProps<RotasDaPilha, "DetalhePet">;
 
 export function TelaDetalhePet({ route }: TelaDetalhePetProps) {
   const { id } = route.params;
@@ -48,15 +49,15 @@ export function TelaDetalhePet({ route }: TelaDetalhePetProps) {
     <View style={estilos.tela}>
       <Text style={estilos.nome}>{pet.nome}</Text>
       <Text style={estilos.especie}>{pet.especie}</Text>
-      <Text style={estilos.raca}>{pet.raca ?? 'Raça não informada'}</Text>
+      <Text style={estilos.raca}>{pet.raca ?? "Raça não informada"}</Text>
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#F6F8FA', padding: 16 },
-  centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  nome: { fontSize: 24, fontWeight: 'bold' },
-  especie: { color: '#5B6B7C', marginBottom: 16 },
-  raca: { marginBottom: 16 },
+  tela: { flex: 1, backgroundColor: cores.fundo, padding: espacos.md },
+  centro: { flex: 1, alignItems: "center", justifyContent: "center" },
+  nome: { fontSize: 24, fontWeight: "bold" },
+  especie: { color: cores.textoSecundario, marginBottom: espacos.md },
+  raca: { marginBottom: espacos.md },
 });

@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { Pet } from '../tipos/entidades';
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { cores, espacos, raio } from "../tema/tema";
+import type { Pet } from "../tipos/entidades";
 
 interface CartaoPetProps {
   pet: Pet;
@@ -11,20 +12,43 @@ export function CartaoPet({ pet }: CartaoPetProps) {
 
   return (
     <View style={estilos.cartao}>
-      <Text style={estilos.nome}>{pet.nome}</Text>
-      <Text style={estilos.especie}>{pet.especie}</Text>
+      <View style={estilos.linha}>
+        <View style={estilos.coluna}>
+          <Text style={estilos.nome}>{pet.nome}</Text>
+        </View>
+        <View style={estilos.etiqueta}>
+          <Text style={estilos.textoEtiqueta}>{pet.especie}</Text>
+        </View>
+      </View>
       <Pressable onPress={() => setMostrarRaca(!mostrarRaca)}>
-        <Text style={estilos.acao}>{mostrarRaca ? 'Esconder raça' : 'Ver raça'}</Text>
+        <Text style={estilos.acao}>
+          {mostrarRaca ? "Esconder raça" : "Ver raça"}
+        </Text>
       </Pressable>
-      {mostrarRaca && <Text style={estilos.raca}>{pet.raca ?? 'Raça não informada'}</Text>}
+      {mostrarRaca && (
+        <Text style={estilos.raca}>{pet.raca ?? "Raça não informada"}</Text>
+      )}
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
-  cartao: { backgroundColor: '#fff', borderRadius: 8, padding: 16, marginBottom: 12 },
-  nome: { fontSize: 18, fontWeight: 'bold' },
-  especie: { color: '#5B6B7C' },
-  acao: { color: '#004A8D', marginTop: 8 },
-  raca: { marginTop: 8 },
+  cartao: {
+    backgroundColor: cores.superficie,
+    borderRadius: raio,
+    padding: espacos.md,
+    marginBottom: espacos.sm,
+  },
+  linha: { flexDirection: "row", alignItems: "flex-start", gap: espacos.sm },
+  coluna: { flex: 1 },
+  nome: { fontSize: 18, fontWeight: "bold", color: cores.texto },
+  etiqueta: {
+    backgroundColor: cores.primaria,
+    borderRadius: raio,
+    paddingHorizontal: espacos.sm,
+    paddingVertical: espacos.xs,
+  },
+  textoEtiqueta: { color: cores.textoClaro, fontWeight: "bold" },
+  acao: { color: cores.primaria, marginTop: espacos.sm },
+  raca: { marginTop: espacos.sm, color: cores.texto },
 });

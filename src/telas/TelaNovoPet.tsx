@@ -1,10 +1,11 @@
-import { StyleSheet, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { FormularioPet, type DadosPet } from '../componentes/FormularioPet';
-import type { RotasDaPilha } from '../navegacao/tipos';
-import { incluirPet } from '../servicos/pets';
+import { StyleSheet, View } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { FormularioPet, type DadosPet } from "../componentes/FormularioPet";
+import type { RotasDaPilha } from "../navegacao/tipos";
+import { incluirPet } from "../servicos/pets";
+import { cores, espacos } from "../tema/tema";
 
-type TelaNovoPetProps = NativeStackScreenProps<RotasDaPilha, 'NovoPet'>;
+type TelaNovoPetProps = NativeStackScreenProps<RotasDaPilha, "NovoPet">;
 
 export function TelaNovoPet({ navigation }: TelaNovoPetProps) {
   function adicionar(dados: DadosPet) {
@@ -20,5 +21,5 @@ export function TelaNovoPet({ navigation }: TelaNovoPetProps) {
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#F6F8FA', padding: 16 },
+  tela: { flex: 1, backgroundColor: cores.fundo, padding: espacos.md },
 });

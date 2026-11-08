@@ -1,24 +1,35 @@
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { CartaoPet } from '../componentes/CartaoPet';
-import type { RotasDaPilha } from '../navegacao/tipos';
-import { carregarPets } from '../servicos/pets';
-import type { Pet } from '../tipos/entidades';
+import { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Botao } from "../componentes/Botao";
+import { CartaoPet } from "../componentes/CartaoPet";
+import type { RotasDaPilha } from "../navegacao/tipos";
+import { carregarPets } from "../servicos/pets";
+import { cores, espacos, larguraLarga } from "../tema/tema";
+import type { Pet } from "../tipos/entidades";
 
-type TelaPetsProps = NativeStackScreenProps<RotasDaPilha, 'Pets'>;
+type TelaPetsProps = NativeStackScreenProps<RotasDaPilha, "Pets">;
 
 export function TelaPets({ navigation }: TelaPetsProps) {
   const [pets, setPets] = useState<Pet[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [tentativa, setTentativa] = useState(0);
+  const { width } = useWindowDimensions();
+  const duasColunas = width >= larguraLarga;
 
   // Recarrega sempre que a tela volta ao foco (ao voltar do cadastro, o pet novo aparece).
   useFocusEffect(
     useCallback(() => {
       let cancelado = false;
-      setCarregando(true);
       carregarPets().then((resultado) => {
         if (cancelado) {
           return;
@@ -32,15 +43,19 @@ export function TelaPets({ navigation }: TelaPetsProps) {
     }, [tentativa]),
   );
 
+  function recarregar() {
+    setCarregando(true);
+    setTentativa(tentativa + 1);
+  }
+
   return (
     <View style={estilos.tela}>
       <View style={estilos.barra}>
-        <Pressable style={estilos.botao} onPress={() => setTentativa(tentativa + 1)}>
-          <Text style={estilos.textoBotao}>Recarregar</Text>
-        </Pressable>
-        <Pressable style={estilos.botao} onPress={() => navigation.navigate('NovoPet')}>
-          <Text style={estilos.textoBotao}>Novo pet</Text>
-        </Pressable>
+        <Botao titulo="Recarregar" variante="secundario" onPress={recarregar} />
+        <Botao
+          titulo="Novo pet"
+          onPress={() => navigation.navigate("NovoPet")}
+        />
       </View>
       {carregando ? (
         <View style={estilos.centro}>
@@ -49,12 +64,19 @@ export function TelaPets({ navigation }: TelaPetsProps) {
         </View>
       ) : (
         <FlatList
+          key={duasColunas ? "duas" : "uma"}
           data={pets}
+          numColumns={duasColunas ? 2 : 1}
+          columnWrapperStyle={duasColunas ? estilos.linhaDeColunas : undefined}
           keyExtractor={(pet) => String(pet.id)}
           renderItem={({ item }) => (
-            <View>
+            <View style={estilos.celula}>
               <CartaoPet pet={item} />
-              <Pressable onPress={() => navigation.navigate('DetalhePet', { id: item.id })}>
+              <Pressable
+                onPress={() =>
+                  navigation.navigate("DetalhePet", { id: item.id })
+                }
+              >
                 <Text style={estilos.detalhes}>Ver detalhes</Text>
               </Pressable>
             </View>
@@ -67,10 +89,14 @@ export function TelaPets({ navigation }: TelaPetsProps) {
 }
 
 const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: '#F6F8FA', padding: 16 },
-  centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  barra: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  botao: { flex: 1, backgroundColor: '#004A8D', borderRadius: 6, padding: 12, alignItems: 'center' },
-  textoBotao: { color: '#fff', fontWeight: 'bold' },
-  detalhes: { color: '#004A8D', fontWeight: 'bold', marginBottom: 16 },
+  tela: { flex: 1, backgroundColor: cores.fundo, padding: espacos.md },
+  barra: { flexDirection: "row", gap: espacos.sm, marginBottom: espacos.md },
+  centro: { flex: 1, alignItems: "center", justifyContent: "center" },
+  linhaDeColunas: { gap: espacos.sm },
+  celula: { flex: 1 },
+  detalhes: {
+    color: cores.primaria,
+    fontWeight: "bold",
+    marginBottom: espacos.md,
+  },
 });
