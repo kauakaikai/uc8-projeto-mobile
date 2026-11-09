@@ -32,3 +32,11 @@ com o escopo reduzido para caber nas 140h da unidade.
 
 - Expo (React Native + TypeScript, `strict: true`, sem `any`)
 - Criado com `npx create-expo-app@latest uc8-projeto-mobile --template blank-typescript`
+
+## Configuração
+
+O aplicativo lê a URL do projeto e a chave publicável do Supabase de um arquivo `.env.local`,
+que não vai para o repositório. Copie `.env.example` para `.env.local` e use estes valores:
+
+EXPO_PUBLIC_SUPABASE_URL=https://xouxkupjvvklyzpyhyur.supabase.co
+EXPO_PUBLIC_SUPABASE_KEY=sb_publishable_COLE-A-SUA-CHAVE-PUBLICAVEL

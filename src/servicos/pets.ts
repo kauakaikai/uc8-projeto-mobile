@@ -1,32 +1,104 @@
-import type { Pet } from '../tipos/entidades';
+import type { Especie, Pet } from '../tipos/entidades';
 
-let pets: Pet[] = [
-  { id: 1, nome: 'Rex', especie: 'cachorro', raca: 'Vira-lata', clienteId: 1 },
-  { id: 2, nome: 'Mimi', especie: 'gato', clienteId: 2 },
-  { id: 3, nome: 'Piu', especie: 'ave', raca: 'Calopsita', clienteId: 1 },
-];
-
-export function carregarPets(): Promise<Pet[]> {
-  return new Promise((resolver) => {
-    setTimeout(() => resolver(pets), 800);
-  });
+export interface DadosNovoPet {
+  nome: string;
+  raca: string;
 }
 
-export function incluirPet(dados: { nome: string; raca: string }): Pet {
-  const proximoId = pets.reduce((maior, atual) => Math.max(maior, atual.id), 0) + 1;
-  const novo: Pet = {
-    id: proximoId,
+interface PetRemoto {
+  id: number;
+  nome: string;
+  especie: Especie;
+  raca: string | null;
+  cliente_id: number;
+}
+
+interface CorpoDeInclusao {
+  nome: string;
+  especie: Especie;
+  raca: string | null;
+  cliente_id: number;
+}
+
+function configuracao(): { url: string; chave: string } {
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const chave = process.env.EXPO_PUBLIC_SUPABASE_KEY;
+  if (url === undefined || chave === undefined) {
+    throw new Error('Defina EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_KEY em .env.local');
+  }
+  return { url, chave };
+}
+
+function ehEspecie(valor: unknown): valor is Especie {
+  return valor === 'cachorro' || valor === 'gato' || valor === 'ave' || valor === 'outro';
+}
+
+function ehPetRemoto(valor: unknown): valor is PetRemoto {
+  if (typeof valor !== 'object' || valor === null) {
+    return false;
+  }
+  const campos = valor as Record<string, unknown>;
+  return (
+    typeof campos.id === 'number' &&
+    typeof campos.nome === 'string' &&
+    ehEspecie(campos.especie) &&
+    typeof campos.cliente_id === 'number' &&
+    (campos.raca === null || typeof campos.raca === 'string')
+  );
+}
+
+function ehListaDePets(valor: unknown): valor is PetRemoto[] {
+  return Array.isArray(valor) && valor.every(ehPetRemoto);
+}
+
+function paraPet(remoto: PetRemoto): Pet {
+  return {
+    id: remoto.id,
+    nome: remoto.nome,
+    especie: remoto.especie,
+    raca: remoto.raca ?? undefined,
+    clienteId: remoto.cliente_id,
+  };
+}
+
+async function requisitar(caminho: string, metodo: 'GET' | 'POST' = 'GET', corpo?: CorpoDeInclusao): Promise<unknown> {
+  const { url, chave } = configuracao();
+  const resposta = await fetch(`${url}/rest/v1/${caminho}`, {
+    method: metodo,
+    headers: { apikey: chave, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+    body: corpo === undefined ? undefined : JSON.stringify(corpo),
+  });
+  if (!resposta.ok) {
+    throw new Error(`A API respondeu ${resposta.status}`);
+  }
+  return resposta.json();
+}
+
+export async function carregarPets(): Promise<Pet[]> {
+  const corpo = await requisitar('pets?select=*&order=id.desc');
+  if (!ehListaDePets(corpo)) {
+    throw new Error('Resposta inesperada da API');
+  }
+  return corpo.map(paraPet);
+}
+
+export async function buscarPet(id: number): Promise<Pet | undefined> {
+  const corpo = await requisitar(`pets?select=*&id=eq.${id}`);
+  if (!ehListaDePets(corpo)) {
+    throw new Error('Resposta inesperada da API');
+  }
+  return corpo.map(paraPet)[0];
+}
+
+export async function incluirPet(dados: DadosNovoPet): Promise<Pet> {
+  const corpo = await requisitar('pets?select=*', 'POST', {
     nome: dados.nome,
     especie: 'outro',
-    raca: dados.raca || undefined,
-    clienteId: 1,
-  };
-  pets = [novo, ...pets];
-  return novo;
-}
-
-export function buscarPet(id: number): Promise<Pet | undefined> {
-  return new Promise((resolver) => {
-    setTimeout(() => resolver(pets.find((pet) => pet.id === id)), 400);
+    raca: dados.raca === '' ? null : dados.raca,
+    cliente_id: 1,
   });
+  if (!ehListaDePets(corpo) || corpo.length !== 1) {
+    throw new Error('Resposta inesperada da API');
+  }
+  return paraPet(corpo[0]);
 }
