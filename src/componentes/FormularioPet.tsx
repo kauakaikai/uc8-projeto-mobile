@@ -27,7 +27,6 @@ export function FormularioPet({ aoAdicionar }: FormularioPetProps) {
   }
 
   function enviar() {
-    // O formulário não conhece a lista: quem a guarda define o id.
     aoAdicionar({ nome: nome.trim(), raca });
     setNome("");
     setRaca("");

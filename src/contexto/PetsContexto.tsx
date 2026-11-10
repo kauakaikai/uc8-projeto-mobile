@@ -6,6 +6,15 @@ import {
   type ReactNode,
 } from "react";
 import {
+  guardarLocal,
+  guardarPendente,
+  listarLocal,
+  listarPendentes,
+  removerPendente,
+  type Pendente,
+} from "../banco/banco";
+import {
+  ErroDaApi,
   carregarPets,
   descreverErro,
   incluirPet,
@@ -16,12 +25,19 @@ import type { Pet } from "../tipos/entidades";
 export type EstadoPets =
   | { tipo: "carregando" }
   | { tipo: "erro"; mensagem: string }
-  | { tipo: "pronto"; pets: Pet[] };
+  | { tipo: "pronto"; pets: Pet[]; pendentes: Pendente[]; origem: "nuvem" }
+  | {
+      tipo: "pronto";
+      pets: Pet[];
+      pendentes: Pendente[];
+      origem: "aparelho";
+      motivo: string;
+    };
 
 interface ValorDosPets {
   estado: EstadoPets;
   recarregar: () => void;
-  incluir: (dados: DadosNovoPet) => Promise<Pet>;
+  incluir: (dados: DadosNovoPet) => Promise<void>;
   buscar: (id: number) => Pet | undefined;
 }
 
@@ -34,16 +50,46 @@ export function PetsProvedor({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelado = false;
     setEstado({ tipo: "carregando" });
-    carregarPets()
-      .then((pets) => {
+    sincronizar()
+      .then(() => carregarPets())
+      .then(async (pets) => {
+        const pendentes = await listarPendentes();
         if (!cancelado) {
-          setEstado({ tipo: "pronto", pets });
+          setEstado({ tipo: "pronto", pets, pendentes, origem: "nuvem" });
         }
+        guardarLocal(pets).catch((erro: unknown) => {
+          console.warn(
+            "Não foi possível guardar no aparelho: " + descreverErro(erro),
+          );
+        });
       })
       .catch((erro: unknown) => {
-        if (!cancelado) {
-          setEstado({ tipo: "erro", mensagem: descreverErro(erro) });
-        }
+        const motivo = descreverErro(erro);
+        Promise.all([listarLocal(), listarPendentes()])
+          .then(([guardados, pendentes]) => {
+            if (cancelado) {
+              return;
+            }
+            if (guardados.length > 0 || pendentes.length > 0) {
+              setEstado({
+                tipo: "pronto",
+                pets: guardados,
+                pendentes,
+                origem: "aparelho",
+                motivo,
+              });
+            } else {
+              setEstado({ tipo: "erro", mensagem: motivo });
+            }
+          })
+          .catch((erroLocal: unknown) => {
+            if (!cancelado) {
+              setEstado({
+                tipo: "erro",
+                mensagem: motivo + " / " + descreverErro(erroLocal),
+              });
+            }
+          });
       });
     return () => {
       cancelado = true;
@@ -54,14 +100,40 @@ export function PetsProvedor({ children }: { children: ReactNode }) {
     setTentativa(tentativa + 1);
   }
 
-  async function incluir(dados: DadosNovoPet): Promise<Pet> {
-    const novo = await incluirPet(dados);
-    setEstado((atual) =>
-      atual.tipo === "pronto"
-        ? { tipo: "pronto", pets: [novo, ...atual.pets] }
-        : atual,
-    );
-    return novo;
+  async function sincronizar(): Promise<void> {
+    for (const pendente of await listarPendentes()) {
+      try {
+        await incluirPet(pendente);
+      } catch (erro: unknown) {
+        if (erro instanceof ErroDaApi) {
+          console.warn("Pendente descartado pela API: " + descreverErro(erro));
+        } else {
+          return;
+        }
+      }
+      await removerPendente(pendente.id);
+    }
+  }
+
+  async function incluir(dados: DadosNovoPet): Promise<void> {
+    try {
+      const novo = await incluirPet(dados);
+      setEstado((atual) =>
+        atual.tipo === "pronto"
+          ? { ...atual, pets: [novo, ...atual.pets] }
+          : atual,
+      );
+    } catch (erro: unknown) {
+      if (erro instanceof ErroDaApi) {
+        throw erro;
+      }
+      const pendente = await guardarPendente(dados);
+      setEstado((atual) =>
+        atual.tipo === "pronto"
+          ? { ...atual, pendentes: [...atual.pendentes, pendente] }
+          : atual,
+      );
+    }
   }
 
   function buscar(id: number): Pet | undefined {

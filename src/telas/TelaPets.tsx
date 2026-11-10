@@ -42,28 +42,42 @@ export function TelaPets({ navigation }: TelaPetsProps) {
         );
       case "pronto":
         return (
-          <FlatList
-            key={duasColunas ? "duas" : "uma"}
-            data={estado.pets}
-            numColumns={duasColunas ? 2 : 1}
-            columnWrapperStyle={
-              duasColunas ? estilos.linhaDeColunas : undefined
-            }
-            keyExtractor={(pet) => String(pet.id)}
-            renderItem={({ item }) => (
-              <View style={estilos.celula}>
-                <CartaoPet pet={item} />
-                <Pressable
-                  onPress={() =>
-                    navigation.navigate("DetalhePet", { id: item.id })
-                  }
-                >
-                  <Text style={estilos.detalhes}>Ver detalhes</Text>
-                </Pressable>
-              </View>
+          <>
+            {estado.origem === "aparelho" && (
+              <Text style={estilos.aviso}>
+                Sem conexão: mostrando os pets guardados no aparelho (
+                {estado.motivo})
+              </Text>
             )}
-            ListEmptyComponent={<Text>Nenhum pet cadastrado.</Text>}
-          />
+            {estado.pendentes.length > 0 && (
+              <Text style={estilos.aviso}>
+                A enviar ({estado.pendentes.length}):{" "}
+                {estado.pendentes.map((pendente) => pendente.nome).join(", ")}
+              </Text>
+            )}
+            <FlatList
+              key={duasColunas ? "duas" : "uma"}
+              data={estado.pets}
+              numColumns={duasColunas ? 2 : 1}
+              columnWrapperStyle={
+                duasColunas ? estilos.linhaDeColunas : undefined
+              }
+              keyExtractor={(pet) => String(pet.id)}
+              renderItem={({ item }) => (
+                <View style={estilos.celula}>
+                  <CartaoPet pet={item} />
+                  <Pressable
+                    onPress={() =>
+                      navigation.navigate("DetalhePet", { id: item.id })
+                    }
+                  >
+                    <Text style={estilos.detalhes}>Ver detalhes</Text>
+                  </Pressable>
+                </View>
+              )}
+              ListEmptyComponent={<Text>Nenhum pet cadastrado.</Text>}
+            />
+          </>
         );
     }
   }
@@ -92,6 +106,7 @@ const estilos = StyleSheet.create({
     gap: espacos.sm,
   },
   erro: { color: cores.erro, fontWeight: "bold" },
+  aviso: { color: cores.alerta, marginBottom: espacos.sm },
   detalheDoErro: { color: cores.textoSecundario, textAlign: "center" },
   linhaDeColunas: { gap: espacos.sm },
   celula: { flex: 1 },
