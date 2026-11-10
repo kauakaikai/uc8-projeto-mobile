@@ -1,41 +1,15 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { usePets } from "../contexto/PetsContexto";
 import type { RotasDaPilha } from "../navegacao/tipos";
-import { buscarPet } from "../servicos/pets";
 import { cores, espacos } from "../tema/tema";
-import type { Pet } from "../tipos/entidades";
 
 type TelaDetalhePetProps = NativeStackScreenProps<RotasDaPilha, "DetalhePet">;
 
 export function TelaDetalhePet({ route }: TelaDetalhePetProps) {
   const { id } = route.params;
-  const [pet, setPet] = useState<Pet | undefined>(undefined);
-  const [carregando, setCarregando] = useState(true);
-
-  useEffect(() => {
-    let cancelado = false;
-    setCarregando(true);
-    buscarPet(id).then((resultado) => {
-      if (cancelado) {
-        return;
-      }
-      setPet(resultado);
-      setCarregando(false);
-    });
-    return () => {
-      cancelado = true;
-    };
-  }, [id]);
-
-  if (carregando) {
-    return (
-      <View style={estilos.centro}>
-        <ActivityIndicator size="large" />
-        <Text>Carregando o pet...</Text>
-      </View>
-    );
-  }
+  const { buscar } = usePets();
+  const pet = buscar(id);
 
   if (pet === undefined) {
     return (
