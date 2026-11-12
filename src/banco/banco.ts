@@ -1,4 +1,5 @@
 import * as SQLite from "expo-sqlite";
+import { ErroDoBanco } from "../erros/erros";
 import type { DadosNovoPet } from "../servicos/pets";
 import type { Especie, Pet } from "../tipos/entidades";
 
@@ -55,52 +56,73 @@ function paraPet(linha: LinhaPet): Pet {
   };
 }
 
-export async function listarLocal(): Promise<Pet[]> {
-  const db = await banco();
-  const linhas = await db.getAllAsync<LinhaPet>(
-    "SELECT id, nome, especie, raca, cliente_id FROM pets ORDER BY id DESC",
-  );
-  return linhas.map(paraPet);
+async function noBanco<T>(
+  operacao: (db: SQLite.SQLiteDatabase) => Promise<T>,
+): Promise<T> {
+  try {
+    const db = await banco();
+    return await operacao(db);
+  } catch (erro: unknown) {
+    throw new ErroDoBanco(erro instanceof Error ? erro.message : String(erro));
+  }
 }
 
-export async function guardarLocal(pets: Pet[]): Promise<void> {
-  const db = await banco();
-  await db.withTransactionAsync(async () => {
-    await db.runAsync("DELETE FROM pets");
-    for (const pet of pets) {
-      await db.runAsync(
-        "INSERT INTO pets (id, nome, especie, raca, cliente_id) VALUES (?, ?, ?, ?, ?)",
-        [pet.id, pet.nome, pet.especie, pet.raca ?? null, pet.clienteId],
-      );
-    }
+export function listarLocal(): Promise<Pet[]> {
+  return noBanco(async (db) => {
+    const linhas = await db.getAllAsync<LinhaPet>(
+      "SELECT id, nome, especie, raca, cliente_id FROM pets ORDER BY id DESC",
+    );
+    return linhas.map(paraPet);
   });
 }
 
-export async function contarLocal(): Promise<number> {
-  const db = await banco();
-  const linha = await db.getFirstAsync<{ total: number }>(
-    "SELECT COUNT(*) AS total FROM pets",
+export function guardarLocal(pets: Pet[]): Promise<void> {
+  return noBanco((db) =>
+    db.withTransactionAsync(async () => {
+      await db.runAsync("DELETE FROM pets");
+      for (const pet of pets) {
+        await db.runAsync(
+          "INSERT INTO pets (id, nome, especie, raca, cliente_id) VALUES (?, ?, ?, ?, ?)",
+          [pet.id, pet.nome, pet.especie, pet.raca ?? null, pet.clienteId],
+        );
+      }
+    }),
   );
-  return linha?.total ?? 0;
 }
 
-export async function listarPendentes(): Promise<Pendente[]> {
-  const db = await banco();
-  return db.getAllAsync<Pendente>(
-    "SELECT id, nome, raca FROM pendentes ORDER BY id",
+export function contarLocal(): Promise<number> {
+  return noBanco(async (db) => {
+    const linha = await db.getFirstAsync<{ total: number }>(
+      "SELECT COUNT(*) AS total FROM pets",
+    );
+    return linha?.total ?? 0;
+  });
+}
+
+export function listarPendentes(): Promise<Pendente[]> {
+  return noBanco((db) =>
+    db.getAllAsync<Pendente>(
+      "SELECT id, nome, raca FROM pendentes ORDER BY id",
+    ),
   );
 }
 
-export async function guardarPendente(dados: DadosNovoPet): Promise<Pendente> {
-  const db = await banco();
-  const resultado = await db.runAsync(
-    "INSERT INTO pendentes (nome, raca) VALUES (?, ?)",
-    [dados.nome, dados.raca],
-  );
-  return { id: resultado.lastInsertRowId, nome: dados.nome, raca: dados.raca };
+export function guardarPendente(dados: DadosNovoPet): Promise<Pendente> {
+  return noBanco(async (db) => {
+    const resultado = await db.runAsync(
+      "INSERT INTO pendentes (nome, raca) VALUES (?, ?)",
+      [dados.nome, dados.raca],
+    );
+    return {
+      id: resultado.lastInsertRowId,
+      nome: dados.nome,
+      raca: dados.raca,
+    };
+  });
 }
 
-export async function removerPendente(id: number): Promise<void> {
-  const db = await banco();
-  await db.runAsync("DELETE FROM pendentes WHERE id = ?", [id]);
+export function removerPendente(id: number): Promise<void> {
+  return noBanco(async (db) => {
+    await db.runAsync("DELETE FROM pendentes WHERE id = ?", [id]);
+  });
 }
