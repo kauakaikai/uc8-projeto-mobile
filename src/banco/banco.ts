@@ -1,7 +1,7 @@
-import * as SQLite from "expo-sqlite";
-import { ErroDoBanco } from "../erros/erros";
-import type { DadosNovoPet } from "../servicos/pets";
-import type { Especie, Pet } from "../tipos/entidades";
+import * as SQLite from 'expo-sqlite';
+import { ErroDoBanco } from '../erros/erros';
+import type { DadosNovoPet } from '../servicos/pets';
+import type { Especie, Pet } from '../tipos/entidades';
 
 export interface Pendente extends DadosNovoPet {
   id: number;
@@ -15,11 +15,18 @@ interface LinhaPet {
   cliente_id: number;
 }
 
+interface LinhaPendente {
+  id: number;
+  nome: string;
+  especie: string;
+  raca: string;
+}
+
 let bancoAberto: Promise<SQLite.SQLiteDatabase> | undefined;
 
 function banco(): Promise<SQLite.SQLiteDatabase> {
   if (bancoAberto === undefined) {
-    bancoAberto = SQLite.openDatabaseAsync("petcare.db").then(async (db) => {
+    bancoAberto = SQLite.openDatabaseAsync('petcare.db').then(async (db) => {
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS pets (
           id INTEGER PRIMARY KEY NOT NULL,
@@ -31,9 +38,14 @@ function banco(): Promise<SQLite.SQLiteDatabase> {
         CREATE TABLE IF NOT EXISTS pendentes (
           id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           nome TEXT NOT NULL,
+          especie TEXT NOT NULL DEFAULT 'outro',
           raca TEXT NOT NULL
-        );
+        )
       `);
+      const colunas = await db.getAllAsync<{ name: string }>('PRAGMA table_info(pendentes)');
+      if (!colunas.some((coluna) => coluna.name === 'especie')) {
+        await db.execAsync("ALTER TABLE pendentes ADD COLUMN especie TEXT NOT NULL DEFAULT 'outro'");
+      }
       return db;
     });
   }
@@ -41,9 +53,7 @@ function banco(): Promise<SQLite.SQLiteDatabase> {
 }
 
 function comoEspecie(texto: string): Especie {
-  return texto === "cachorro" || texto === "gato" || texto === "ave"
-    ? texto
-    : "outro";
+  return texto === 'cachorro' || texto === 'gato' || texto === 'ave' ? texto : 'outro';
 }
 
 function paraPet(linha: LinhaPet): Pet {
@@ -56,9 +66,7 @@ function paraPet(linha: LinhaPet): Pet {
   };
 }
 
-async function noBanco<T>(
-  operacao: (db: SQLite.SQLiteDatabase) => Promise<T>,
-): Promise<T> {
+async function noBanco<T>(operacao: (db: SQLite.SQLiteDatabase) => Promise<T>): Promise<T> {
   try {
     const db = await banco();
     return await operacao(db);
@@ -69,9 +77,7 @@ async function noBanco<T>(
 
 export function listarLocal(): Promise<Pet[]> {
   return noBanco(async (db) => {
-    const linhas = await db.getAllAsync<LinhaPet>(
-      "SELECT id, nome, especie, raca, cliente_id FROM pets ORDER BY id DESC",
-    );
+    const linhas = await db.getAllAsync<LinhaPet>('SELECT id, nome, especie, raca, cliente_id FROM pets ORDER BY id DESC');
     return linhas.map(paraPet);
   });
 }
@@ -79,50 +85,58 @@ export function listarLocal(): Promise<Pet[]> {
 export function guardarLocal(pets: Pet[]): Promise<void> {
   return noBanco((db) =>
     db.withTransactionAsync(async () => {
-      await db.runAsync("DELETE FROM pets");
+      await db.runAsync('DELETE FROM pets');
       for (const pet of pets) {
-        await db.runAsync(
-          "INSERT INTO pets (id, nome, especie, raca, cliente_id) VALUES (?, ?, ?, ?, ?)",
-          [pet.id, pet.nome, pet.especie, pet.raca ?? null, pet.clienteId],
-        );
+        await db.runAsync('INSERT INTO pets (id, nome, especie, raca, cliente_id) VALUES (?, ?, ?, ?, ?)', [
+          pet.id,
+          pet.nome,
+          pet.especie,
+          pet.raca ?? null,
+          pet.clienteId,
+        ]);
       }
     }),
   );
 }
 
+export function atualizarLocal(pet: Pet): Promise<void> {
+  return noBanco(async (db) => {
+    await db.runAsync('UPDATE pets SET nome = ?, especie = ?, raca = ? WHERE id = ?', [
+      pet.nome,
+      pet.especie,
+      pet.raca ?? null,
+      pet.id,
+    ]);
+  });
+}
+
 export function contarLocal(): Promise<number> {
   return noBanco(async (db) => {
-    const linha = await db.getFirstAsync<{ total: number }>(
-      "SELECT COUNT(*) AS total FROM pets",
-    );
+    const linha = await db.getFirstAsync<{ total: number }>('SELECT COUNT(*) AS total FROM pets');
     return linha?.total ?? 0;
   });
 }
 
 export function listarPendentes(): Promise<Pendente[]> {
-  return noBanco((db) =>
-    db.getAllAsync<Pendente>(
-      "SELECT id, nome, raca FROM pendentes ORDER BY id",
-    ),
-  );
+  return noBanco(async (db) => {
+    const linhas = await db.getAllAsync<LinhaPendente>('SELECT id, nome, especie, raca FROM pendentes ORDER BY id');
+    return linhas.map((linha) => ({ id: linha.id, nome: linha.nome, especie: comoEspecie(linha.especie), raca: linha.raca }));
+  });
 }
 
 export function guardarPendente(dados: DadosNovoPet): Promise<Pendente> {
   return noBanco(async (db) => {
-    const resultado = await db.runAsync(
-      "INSERT INTO pendentes (nome, raca) VALUES (?, ?)",
-      [dados.nome, dados.raca],
-    );
-    return {
-      id: resultado.lastInsertRowId,
-      nome: dados.nome,
-      raca: dados.raca,
-    };
+    const resultado = await db.runAsync('INSERT INTO pendentes (nome, especie, raca) VALUES (?, ?, ?)', [
+      dados.nome,
+      dados.especie,
+      dados.raca,
+    ]);
+    return { id: resultado.lastInsertRowId, nome: dados.nome, especie: dados.especie, raca: dados.raca };
   });
 }
 
 export function removerPendente(id: number): Promise<void> {
   return noBanco(async (db) => {
-    await db.runAsync("DELETE FROM pendentes WHERE id = ?", [id]);
+    await db.runAsync('DELETE FROM pendentes WHERE id = ?', [id]);
   });
 }

@@ -3,6 +3,7 @@ import type { Especie, Pet } from '../tipos/entidades';
 export interface DadosNovoPet {
   nome: string;
   raca: string;
+  especie: Especie;
 }
 
 interface PetRemoto {
@@ -13,11 +14,11 @@ interface PetRemoto {
   cliente_id: number;
 }
 
-interface CorpoDeInclusao {
+interface CorpoDeEscrita {
   nome: string;
   especie: Especie;
   raca: string | null;
-  cliente_id: number;
+  cliente_id?: number;
 }
 
 export class ErroDaApi extends Error {
@@ -90,7 +91,7 @@ function paraPet(remoto: PetRemoto): Pet {
   };
 }
 
-async function requisitar(caminho: string, metodo: 'GET' | 'POST' = 'GET', corpo?: CorpoDeInclusao): Promise<unknown> {
+async function requisitar(caminho: string, metodo: 'GET' | 'POST' | 'PATCH' = 'GET', corpo?: CorpoDeEscrita): Promise<unknown> {
   const { url, chave } = configuracao();
   const resposta = await fetch(`${url}/rest/v1/${caminho}`, {
     method: metodo,
@@ -122,9 +123,21 @@ export async function buscarPet(id: number): Promise<Pet | undefined> {
 export async function incluirPet(dados: DadosNovoPet): Promise<Pet> {
   const corpo = await requisitar('pets?select=*', 'POST', {
     nome: dados.nome,
-    especie: 'outro',
+    especie: dados.especie,
     raca: dados.raca === '' ? null : dados.raca,
     cliente_id: 1,
+  });
+  if (!ehListaDePets(corpo) || corpo.length !== 1) {
+    throw new Error('Resposta inesperada da API');
+  }
+  return paraPet(corpo[0]);
+}
+
+export async function atualizarPet(id: number, dados: DadosNovoPet): Promise<Pet> {
+  const corpo = await requisitar(`pets?select=*&id=eq.${id}`, 'PATCH', {
+    nome: dados.nome,
+    especie: dados.especie,
+    raca: dados.raca === '' ? null : dados.raca,
   });
   if (!ehListaDePets(corpo) || corpo.length !== 1) {
     throw new Error('Resposta inesperada da API');
