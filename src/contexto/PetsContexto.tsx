@@ -13,10 +13,10 @@ import {
   removerPendente,
   type Pendente,
 } from "../banco/banco";
+import { ErroDeValidacao, registrarErro } from "../erros/erros";
 import {
   ErroDaApi,
   carregarPets,
-  descreverErro,
   incluirPet,
   type DadosNovoPet,
 } from "../servicos/pets";
@@ -51,20 +51,24 @@ export function PetsProvedor({ children }: { children: ReactNode }) {
     let cancelado = false;
     setEstado({ tipo: "carregando" });
     sincronizar()
+      .catch((erro: unknown) => {
+        registrarErro("sincronizar", erro);
+      })
       .then(() => carregarPets())
       .then(async (pets) => {
-        const pendentes = await listarPendentes();
+        const pendentes = await listarPendentes().catch((erro: unknown) => {
+          registrarErro("pendentes", erro);
+          return [];
+        });
         if (!cancelado) {
           setEstado({ tipo: "pronto", pets, pendentes, origem: "nuvem" });
         }
         guardarLocal(pets).catch((erro: unknown) => {
-          console.warn(
-            "Não foi possível guardar no aparelho: " + descreverErro(erro),
-          );
+          registrarErro("guardar no aparelho", erro);
         });
       })
       .catch((erro: unknown) => {
-        const motivo = descreverErro(erro);
+        const motivo = registrarErro("carga", erro).mensagem;
         Promise.all([listarLocal(), listarPendentes()])
           .then(([guardados, pendentes]) => {
             if (cancelado) {
@@ -86,7 +90,8 @@ export function PetsProvedor({ children }: { children: ReactNode }) {
             if (!cancelado) {
               setEstado({
                 tipo: "erro",
-                mensagem: motivo + " / " + descreverErro(erroLocal),
+                mensagem: registrarErro("leitura do aparelho", erroLocal)
+                  .mensagem,
               });
             }
           });
@@ -100,13 +105,15 @@ export function PetsProvedor({ children }: { children: ReactNode }) {
     setTentativa(tentativa + 1);
   }
 
+  // Envia os cadastros feitos sem rede. Recusa da API: descarta (repetir não muda a resposta).
+  // Falta de rede: para e deixa os pendentes para a próxima vez.
   async function sincronizar(): Promise<void> {
     for (const pendente of await listarPendentes()) {
       try {
         await incluirPet(pendente);
       } catch (erro: unknown) {
         if (erro instanceof ErroDaApi) {
-          console.warn("Pendente descartado pela API: " + descreverErro(erro));
+          registrarErro("pendente descartado", erro);
         } else {
           return;
         }
@@ -116,6 +123,9 @@ export function PetsProvedor({ children }: { children: ReactNode }) {
   }
 
   async function incluir(dados: DadosNovoPet): Promise<void> {
+    if (dados.nome.trim() === "") {
+      throw new ErroDeValidacao("Informe o nome.");
+    }
     try {
       const novo = await incluirPet(dados);
       setEstado((atual) =>

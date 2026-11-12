@@ -45,8 +45,7 @@ export function TelaPets({ navigation }: TelaPetsProps) {
           <>
             {estado.origem === "aparelho" && (
               <Text style={estilos.aviso}>
-                Sem conexão: mostrando os pets guardados no aparelho (
-                {estado.motivo})
+                Mostrando os pets guardados no aparelho: {estado.motivo}
               </Text>
             )}
             {estado.pendentes.length > 0 && (
