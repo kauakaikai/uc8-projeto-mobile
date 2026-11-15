@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { FormularioPet, type DadosPet } from "../componentes/FormularioPet";
 import { usePets } from "../contexto/PetsContexto";
 import { registrarErro } from "../erros/erros";
-import type { RotasDaPilha } from "../navegacao/tipos";
+import type { RotasDaPilha } from "../navegacao/Tipos";
 import { cores, espacos } from "../tema/tema";
 
 type TelaNovoPetProps = NativeStackScreenProps<RotasDaPilha, "NovoPet">;

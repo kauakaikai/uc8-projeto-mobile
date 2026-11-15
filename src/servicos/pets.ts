@@ -1,5 +1,5 @@
-import type { Especie, Pet } from '../tipos/entidades';
-import { ErroDaApi, petCareApi, type Pet as PetRemoto } from './petcareApi';
+import type { Especie, Pet } from "../tipos/entidades";
+import { ErroDaApi, petCareApi, type Pet as PetRemoto } from "./petcareApi";
 
 export interface DadosNovoPet {
   nome: string;
@@ -11,9 +11,10 @@ export interface DadosNovoPet {
 export { ErroDaApi };
 
 export function descreverErro(erro: unknown): string {
-  if (erro instanceof ErroDaApi) return `A API respondeu ${erro.status}: ${erro.message}`;
+  if (erro instanceof ErroDaApi)
+    return `A API respondeu ${erro.status}: ${erro.message}`;
   if (erro instanceof Error) return erro.message;
-  return 'Erro desconhecido';
+  return "Erro desconhecido";
 }
 
 function paraPet(remoto: PetRemoto): Pet {
@@ -31,7 +32,9 @@ export async function carregarPets(): Promise<Pet[]> {
 }
 
 export async function buscarPet(id: number): Promise<Pet | undefined> {
-  return (await petCareApi.listarPets()).map(paraPet).find((pet) => pet.id === id);
+  return (await petCareApi.listarPets())
+    .map(paraPet)
+    .find((pet) => pet.id === id);
 }
 
 export async function incluirPet(dados: DadosNovoPet): Promise<Pet> {
@@ -44,7 +47,10 @@ export async function incluirPet(dados: DadosNovoPet): Promise<Pet> {
   return paraPet(novo);
 }
 
-export async function atualizarPet(id: number, dados: DadosNovoPet): Promise<Pet> {
+export async function atualizarPet(
+  id: number,
+  dados: DadosNovoPet,
+): Promise<Pet> {
   const existente = await buscarPet(id);
   const atualizado = await petCareApi.atualizarPet(id, {
     nome: dados.nome.trim(),

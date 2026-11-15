@@ -1,6 +1,6 @@
-import { StyleSheet, Text, TextInput, View } from 'react-native';
-import type { KeyboardTypeOptions } from 'react-native';
-import { cores, espacos } from '../tema/tema';
+import { StyleSheet, Text, TextInput, View } from "react-native";
+import type { KeyboardTypeOptions } from "react-native";
+import { cores, espacos } from "../tema/tema";
 
 interface CampoProps {
   rotulo: string;
@@ -18,7 +18,7 @@ export function Campo({
   valor,
   aoMudar,
   erro,
-  tipoDeTeclado = 'default',
+  tipoDeTeclado = "default",
   teclado,
   placeholder,
   multiline = false,
@@ -27,15 +27,21 @@ export function Campo({
     <View style={estilos.grupo}>
       <Text style={estilos.rotulo}>{rotulo}</Text>
       <TextInput
-        style={[estilos.entrada, multiline && estilos.multilinha, erro !== undefined && estilos.entradaComErro]}
+        style={[
+          estilos.entrada,
+          multiline && estilos.multilinha,
+          erro !== undefined && estilos.entradaComErro,
+        ]}
         value={valor}
         onChangeText={aoMudar}
         keyboardType={teclado ?? tipoDeTeclado}
-        autoCapitalize={(teclado ?? tipoDeTeclado) === 'email-address' ? 'none' : 'sentences'}
+        autoCapitalize={
+          (teclado ?? tipoDeTeclado) === "email-address" ? "none" : "sentences"
+        }
         placeholder={placeholder}
         placeholderTextColor={cores.textoClaroSecundario}
         multiline={multiline}
-        textAlignVertical={multiline ? 'top' : 'center'}
+        textAlignVertical={multiline ? "top" : "center"}
       />
       {erro !== undefined && <Text style={estilos.erro}>{erro}</Text>}
     </View>
@@ -44,7 +50,12 @@ export function Campo({
 
 const estilos = StyleSheet.create({
   grupo: { marginBottom: espacos.sm + 4 },
-  rotulo: { color: cores.textoSecundario, marginBottom: espacos.xs, fontWeight: '700', fontSize: 13 },
+  rotulo: {
+    color: cores.textoSecundario,
+    marginBottom: espacos.xs,
+    fontWeight: "700",
+    fontSize: 13,
+  },
   entrada: {
     minHeight: 46,
     backgroundColor: cores.fundo,

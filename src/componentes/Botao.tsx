@@ -1,16 +1,21 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
-import { cores, espacos } from '../tema/tema';
+import { Pressable, StyleSheet, Text } from "react-native";
+import { cores, espacos } from "../tema/tema";
 
 interface BotaoProps {
   titulo: string;
   onPress: () => void;
-  variante?: 'primario' | 'secundario' | 'perigo';
+  variante?: "primario" | "secundario" | "perigo";
   desabilitado?: boolean;
 }
 
-export function Botao({ titulo, onPress, variante = 'primario', desabilitado = false }: BotaoProps) {
-  const secundario = variante === 'secundario';
-  const perigo = variante === 'perigo';
+export function Botao({
+  titulo,
+  onPress,
+  variante = "primario",
+  desabilitado = false,
+}: BotaoProps) {
+  const secundario = variante === "secundario";
+  const perigo = variante === "perigo";
 
   return (
     <Pressable
@@ -25,7 +30,9 @@ export function Botao({ titulo, onPress, variante = 'primario', desabilitado = f
         desabilitado && estilos.desabilitado,
       ]}
     >
-      <Text style={[estilos.texto, secundario && estilos.textoSecundario]}>{titulo}</Text>
+      <Text style={[estilos.texto, secundario && estilos.textoSecundario]}>
+        {titulo}
+      </Text>
     </Pressable>
   );
 }
@@ -38,8 +45,8 @@ const estilos = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: espacos.sm + 2,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   secundario: {
     backgroundColor: cores.superficie,
@@ -49,6 +56,6 @@ const estilos = StyleSheet.create({
   perigo: { backgroundColor: cores.vinho },
   pressionado: { opacity: 0.78 },
   desabilitado: { opacity: 0.45 },
-  texto: { color: cores.textoClaro, fontWeight: '800', fontSize: 13 },
+  texto: { color: cores.textoClaro, fontWeight: "800", fontSize: 13 },
   textoSecundario: { color: cores.primariaEscura },
 });

@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  atualizarLocal,
   guardarLocal,
   guardarPendente,
   listarLocal,
@@ -16,6 +17,7 @@ import {
 import { ErroDeValidacao, registrarErro } from "../erros/erros";
 import {
   ErroDaApi,
+  atualizarPet,
   carregarPets,
   incluirPet,
   type DadosNovoPet,
@@ -38,6 +40,7 @@ interface ValorDosPets {
   estado: EstadoPets;
   recarregar: () => void;
   incluir: (dados: DadosNovoPet) => Promise<void>;
+  atualizar: (id: number, dados: DadosNovoPet) => Promise<void>;
   buscar: (id: number) => Pet | undefined;
 }
 
@@ -146,6 +149,25 @@ export function PetsProvedor({ children }: { children: ReactNode }) {
     }
   }
 
+  // Editar exige conexão: sem rede o erro sobe para a tela (não há fila de edição).
+  async function atualizar(id: number, dados: DadosNovoPet): Promise<void> {
+    if (dados.nome.trim() === "") {
+      throw new ErroDeValidacao("Informe o nome.");
+    }
+    const atualizado = await atualizarPet(id, dados);
+    setEstado((atual) =>
+      atual.tipo === "pronto"
+        ? {
+            ...atual,
+            pets: atual.pets.map((pet) => (pet.id === id ? atualizado : pet)),
+          }
+        : atual,
+    );
+    atualizarLocal(atualizado).catch((erro: unknown) => {
+      registrarErro("atualizar no aparelho", erro);
+    });
+  }
+
   function buscar(id: number): Pet | undefined {
     return estado.tipo === "pronto"
       ? estado.pets.find((pet) => pet.id === id)
@@ -153,7 +175,9 @@ export function PetsProvedor({ children }: { children: ReactNode }) {
   }
 
   return (
-    <PetsContexto.Provider value={{ estado, recarregar, incluir, buscar }}>
+    <PetsContexto.Provider
+      value={{ estado, recarregar, incluir, atualizar, buscar }}
+    >
       {children}
     </PetsContexto.Provider>
   );

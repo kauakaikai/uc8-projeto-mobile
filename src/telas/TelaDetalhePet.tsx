@@ -1,12 +1,13 @@
 import { StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Botao } from "../componentes/Botao";
 import { usePets } from "../contexto/PetsContexto";
-import type { RotasDaPilha } from "../navegacao/tipos";
+import type { RotasDaPilha } from "../navegacao/Tipos";
 import { cores, espacos } from "../tema/tema";
 
 type TelaDetalhePetProps = NativeStackScreenProps<RotasDaPilha, "DetalhePet">;
 
-export function TelaDetalhePet({ route }: TelaDetalhePetProps) {
+export function TelaDetalhePet({ route, navigation }: TelaDetalhePetProps) {
   const { id } = route.params;
   const { buscar } = usePets();
   const pet = buscar(id);
@@ -24,6 +25,12 @@ export function TelaDetalhePet({ route }: TelaDetalhePetProps) {
       <Text style={estilos.nome}>{pet.nome}</Text>
       <Text style={estilos.especie}>{pet.especie}</Text>
       <Text style={estilos.raca}>{pet.raca ?? "Raça não informada"}</Text>
+      <View style={estilos.acoes}>
+        <Botao
+          titulo="Editar"
+          onPress={() => navigation.navigate("EditarPet", { id })}
+        />
+      </View>
     </View>
   );
 }
@@ -34,4 +41,5 @@ const estilos = StyleSheet.create({
   nome: { fontSize: 24, fontWeight: "bold" },
   especie: { color: cores.textoSecundario, marginBottom: espacos.md },
   raca: { marginBottom: espacos.md },
+  acoes: { flexDirection: "row" },
 });

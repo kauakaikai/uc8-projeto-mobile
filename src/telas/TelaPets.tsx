@@ -11,7 +11,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Botao } from "../componentes/Botao";
 import { CartaoPet } from "../componentes/CartaoPet";
 import { usePets } from "../contexto/PetsContexto";
-import type { RotasDaPilha } from "../navegacao/tipos";
+import type { RotasDaPilha } from "../navegacao/Tipos";
 import { cores, espacos, larguraLarga } from "../tema/tema";
 
 type TelaPetsProps = NativeStackScreenProps<RotasDaPilha, "Pets">;
@@ -65,13 +65,22 @@ export function TelaPets({ navigation }: TelaPetsProps) {
               renderItem={({ item }) => (
                 <View style={estilos.celula}>
                   <CartaoPet pet={item} />
-                  <Pressable
-                    onPress={() =>
-                      navigation.navigate("DetalhePet", { id: item.id })
-                    }
-                  >
-                    <Text style={estilos.detalhes}>Ver detalhes</Text>
-                  </Pressable>
+                  <View style={estilos.acoesDoCartao}>
+                    <Pressable
+                      onPress={() =>
+                        navigation.navigate("DetalhePet", { id: item.id })
+                      }
+                    >
+                      <Text style={estilos.detalhes}>Ver detalhes</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() =>
+                        navigation.navigate("EditarPet", { id: item.id })
+                      }
+                    >
+                      <Text style={estilos.detalhes}>Editar</Text>
+                    </Pressable>
+                  </View>
                 </View>
               )}
               ListEmptyComponent={<Text>Nenhum pet cadastrado.</Text>}
@@ -109,6 +118,7 @@ const estilos = StyleSheet.create({
   detalheDoErro: { color: cores.textoSecundario, textAlign: "center" },
   linhaDeColunas: { gap: espacos.sm },
   celula: { flex: 1 },
+  acoesDoCartao: { flexDirection: "row", gap: espacos.md },
   detalhes: {
     color: cores.primaria,
     fontWeight: "bold",

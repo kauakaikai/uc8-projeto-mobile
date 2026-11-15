@@ -15,6 +15,13 @@ interface LinhaPet {
   cliente_id: number;
 }
 
+interface LinhaPendente {
+  id: number;
+  nome: string;
+  especie: string;
+  raca: string;
+}
+
 let bancoAberto: Promise<SQLite.SQLiteDatabase> | undefined;
 
 function banco(): Promise<SQLite.SQLiteDatabase> {
@@ -31,9 +38,18 @@ function banco(): Promise<SQLite.SQLiteDatabase> {
         CREATE TABLE IF NOT EXISTS pendentes (
           id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
           nome TEXT NOT NULL,
+          especie TEXT NOT NULL DEFAULT 'outro',
           raca TEXT NOT NULL
-        );
+        )
       `);
+      const colunas = await db.getAllAsync<{ name: string }>(
+        "PRAGMA table_info(pendentes)",
+      );
+      if (!colunas.some((coluna) => coluna.name === "especie")) {
+        await db.execAsync(
+          "ALTER TABLE pendentes ADD COLUMN especie TEXT NOT NULL DEFAULT 'outro'",
+        );
+      }
       return db;
     });
   }
@@ -90,6 +106,15 @@ export function guardarLocal(pets: Pet[]): Promise<void> {
   );
 }
 
+export function atualizarLocal(pet: Pet): Promise<void> {
+  return noBanco(async (db) => {
+    await db.runAsync(
+      "UPDATE pets SET nome = ?, especie = ?, raca = ? WHERE id = ?",
+      [pet.nome, pet.especie, pet.raca ?? null, pet.id],
+    );
+  });
+}
+
 export function contarLocal(): Promise<number> {
   return noBanco(async (db) => {
     const linha = await db.getFirstAsync<{ total: number }>(
@@ -100,18 +125,24 @@ export function contarLocal(): Promise<number> {
 }
 
 export function listarPendentes(): Promise<Pendente[]> {
-  return noBanco((db) =>
-    db.getAllAsync<Pendente>(
-      "SELECT id, nome, raca FROM pendentes ORDER BY id",
-    ),
-  );
+  return noBanco(async (db) => {
+    const linhas = await db.getAllAsync<LinhaPendente>(
+      "SELECT id, nome, especie, raca FROM pendentes ORDER BY id",
+    );
+    return linhas.map((linha) => ({
+      id: linha.id,
+      nome: linha.nome,
+      especie: comoEspecie(linha.especie),
+      raca: linha.raca,
+    }));
+  });
 }
 
 export function guardarPendente(dados: DadosNovoPet): Promise<Pendente> {
   return noBanco(async (db) => {
     const resultado = await db.runAsync(
-      "INSERT INTO pendentes (nome, raca) VALUES (?, ?)",
-      [dados.nome, dados.raca],
+      "INSERT INTO pendentes (nome, especie, raca) VALUES (?, ?, ?)",
+      [dados.nome, dados.especie, dados.raca],
     );
     return {
       id: resultado.lastInsertRowId,
