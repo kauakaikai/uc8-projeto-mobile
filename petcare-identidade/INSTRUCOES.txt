@@ -1,8 +1,0 @@
-PetCare - identidade visual
-
-1. Copie a pasta assets para a raiz do projeto mobile, mesclando com a pasta assets existente.
-2. Substitua o app.json da raiz pelo app.json deste pacote.
-3. O nome exibido será PetCare. O slug, o package Android e o projectId EAS foram preservados para manter o vínculo do projeto e permitir atualizar o app instalado.
-4. Faça um teste de configuração com: npx expo config --type public
-5. Gere um novo APK com: npx eas-cli@latest build --platform android --profile preview
-O arquivo petcare-logo.png é a marca com nome; petcare-icon.png é o símbolo sem texto usado no ícone adaptativo do Android.

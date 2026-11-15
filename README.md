@@ -1,113 +1,181 @@
-# 🐾 PetCare Mobile — UC8
+# PetCare Mobile — UC8
 
-Aplicativo mobile da PetCare, refeito para acompanhar os módulos do projeto desktop da UC5. Desenvolvido com **React Native, Expo e TypeScript**. A interface mantém a identidade visual do desktop e se adapta a telas de celular; o aplicativo continua abrindo pelo **Expo Go**.
+Aplicativo mobile de gerenciamento de tutores, pets e consultas veterinárias. Desenvolvido com **React Native, Expo e TypeScript**, com persistência local em **SQLite** e uma API **Node.js/Express** conectada ao **PostgreSQL do Neon**.
 
 ## Funcionalidades
 
-- **Tutores:** cadastrar, listar, editar e excluir tutores (nome, telefone e e-mail).
-- **Pets:** selecionar um tutor e cadastrar, listar, editar e excluir seus pets (nome, espécie e raça).
-- **Consultas:** selecionar tutor e pet, registrar, listar, editar e excluir consultas (data, hora, sintomas/descrição e valor).
-- **Buscar:** localizar pets pelo nome do pet ou do tutor e filtrar os resultados por espécie.
-- Mensagens de validação e tratamento de erros nas operações.
+- **Tutores:** cadastrar, consultar, editar e excluir tutores.
+- **Pets:** cadastrar, consultar, editar e excluir pets vinculados a um tutor.
+- **Consultas:** registrar, consultar, editar e excluir consultas vinculadas a um pet.
+- **Buscar:** localizar pets pelos dados disponíveis na busca.
+- **Sobre:** apresentar informações do aplicativo.
+- **Uso offline para novos cadastros:** quando não há conexão, novos tutores, pets e consultas podem ser guardados no SQLite e colocados em uma fila para sincronização posterior.
 
-O mobile utiliza os mesmos nomes de tabelas e os mesmos campos definidos no projeto desktop: `clientes`, `pets` e `consultas`.
+## Tecnologias
 
-## Arquitetura e segurança
+- React Native, Expo e TypeScript.
+- Expo SQLite para cache e fila local de operações pendentes.
+- Node.js e Express para a API HTTP.
+- PostgreSQL hospedado no Neon.
+- Render para hospedagem da API.
+- EAS Build para gerar o APK Android.
 
-O aplicativo Expo **não conecta diretamente ao PostgreSQL** e não contém a senha do banco. A comunicação passa por uma pequena API Node.js/Express (`api/`), que utiliza `pg` e a `DATABASE_URL` do Neon no servidor. As consultas SQL são parametrizadas.
+## Arquitetura
+
+O aplicativo não acessa o PostgreSQL diretamente. A comunicação com o banco passa pela API; o SQLite mantém dados locais e operações pendentes no aparelho.
 
 ```text
-Expo Go (celular)
-      │ HTTP pela rede local
-      ▼
-API Node.js / Express (api/)
-      │ DATABASE_URL (somente no servidor)
-      ▼
-Neon PostgreSQL
+Aplicativo PetCare (Expo / React Native)
+       │
+       ├── petcareApi.ts ── HTTP ──> API Node.js / Express (Render)
+       │                                  │
+       │                                  └── PostgreSQL (Neon)
+       │
+       └── persistenciaPetCare.ts ──> SQLite local
+                                      ├── cache de dados
+                                      └── fila de cadastros pendentes
 ```
 
-A API foi preparada para desenvolvimento local e apresentação em rede local. Antes de publicar a API na internet, adicione autenticação e autorização por usuário; não exponha uma API de escrita aberta publicamente.
+### Como funciona o modo offline
 
-## 1. Preparar o banco Neon
+1. O aplicativo mantém dados locais no SQLite para permitir a consulta dos dados já armazenados no aparelho.
+2. Se um novo tutor, pet ou consulta for cadastrado sem conexão, a operação é guardada na fila local.
+3. O aplicativo usa identificadores temporários para relacionar cadastros que ainda não receberam um ID do servidor.
+4. Quando a conexão volta e a rotina de atualização é executada, `sincronizarPendentes()` tenta enviar os itens da fila à API e relacionar os IDs temporários aos IDs definitivos.
 
-Use o mesmo banco Neon já configurado no projeto desktop. No painel SQL do Neon, execute o conteúdo de `api/schema.sql` caso as tabelas `clientes`, `pets` e `consultas` ainda não existam. Se o schema do desktop já foi executado nesse banco, não precisa executar novamente.
+**Limitação conhecida:** nesta versão, a fila offline atende à criação de tutores, pets e consultas. Edição e exclusão ainda dependem de conexão com a API. A fila e o cache são locais ao aparelho; não substituem o banco central.
 
-## 2. Iniciar a API
+## Configuração do banco de dados
 
-Abra um terminal na pasta `api`:
+O banco PostgreSQL utilizado pela API é hospedado no Neon. Caso as tabelas ainda não existam, execute o script `api/schema.sql` no banco. As entidades principais são `clientes` (tutores), `pets` e `consultas`.
+
+A variável `DATABASE_URL` contém a string de conexão do banco e deve existir **somente no ambiente da API**, nunca no aplicativo mobile.
+
+## Configurar e executar a API localmente
+
+Na raiz do projeto, abra um terminal:
 
 ```bash
 cd api
 npm install
 ```
 
-Copie `api/.env.example` para `api/.env` e coloque a mesma string `DATABASE_URL` usada no desktop:
+Crie `api/.env` a partir de `api/.env.example` e configure a conexão do Neon:
 
 ```env
 DATABASE_URL=postgresql://usuario:senha@host/neondb?sslmode=require
 PORT=3000
 ```
 
-Inicie o servidor:
+Inicie a API em modo de desenvolvimento:
 
 ```bash
 npm run dev
 ```
 
-O terminal deve informar que a API está disponível na porta 3000. Teste no navegador do computador em `http://localhost:3000/api/health`; deve aparecer `{"status":"ok","servico":"PetCare API"}`.
+Verifique a saúde da API no navegador:
 
-## 3. Configurar o Expo Go
+```text
+http://localhost:3000/api/health
+```
 
-Em outro terminal, na raiz do projeto mobile:
+A resposta esperada é um JSON indicando `status: ok` e `servico: PetCare API`.
+
+## Configurar o aplicativo mobile
+
+Na raiz do projeto mobile, instale as dependências:
 
 ```bash
 npm install
 ```
 
-Copie `.env.example` para `.env.local`. No valor de `EXPO_PUBLIC_API_URL`, troque `SEU_IP_LOCAL` pelo IPv4 do computador que está executando a API. No Windows, descubra-o com `ipconfig`:
+Crie `.env.local` a partir de `.env.example` e informe a URL base da API, terminando em `/api`.
+
+Para usar a API hospedada no Render:
+
+```env
+EXPO_PUBLIC_API_URL=https://SEU-SERVICO.onrender.com/api
+```
+
+Substitua o exemplo pelo endereço real do serviço Render. Para usar uma API executada no computador, use o IPv4 do computador na rede local, por exemplo:
 
 ```env
 EXPO_PUBLIC_API_URL=http://192.168.0.15:3000/api
 ```
 
-Use o IP real do seu computador, não o exemplo acima. O celular e o computador precisam estar na mesma rede Wi-Fi. Permita o acesso do Node.js na rede privada do Windows, caso o Firewall pergunte.
+O endereço acima é apenas um exemplo. Em um teste pela rede local, o celular e o computador precisam estar na mesma rede e o firewall deve permitir a conexão com a API.
 
-Inicie o Expo:
+Depois de alterar `.env.local`, reinicie o Expo limpando o cache:
 
 ```bash
-npx expo start --lan
+npx expo start -c
 ```
 
-Abra o Expo Go no celular e leia o QR Code. Mantenha os dois terminais abertos durante o uso (API e Expo).
+Leia o QR Code com o Expo Go. Para o aplicativo funcionar com a API hospedada, o celular precisa ter acesso à internet. Para o teste com API local, precisa alcançar o computador pela rede local.
 
-> Quando alterar `.env.local`, reinicie o Expo limpando o cache: `npx expo start --clear`.
+## Implantação da API no Render
 
-## 4. Estrutura mantida
+A API pode ser implantada a partir da pasta `api/` do repositório. Na configuração do serviço, utilize:
 
-As pastas e os arquivos que já existiam no projeto mobile foram mantidos. A nova tela principal concentra a navegação e as operações equivalentes às quatro abas do desktop. As telas, componentes, navegação, cache SQLite, contexto e roteiro de testes anteriores continuam no repositório para consulta e reaproveitamento; nenhum deles precisa ser apagado.
+- **Root Directory:** `api`
+- **Build Command:** `npm install`
+- **Start Command:** `npm start`
+- **Environment Variable:** `DATABASE_URL`, com a string de conexão do Neon.
+
+O Render fornece a variável `PORT` para o serviço web. Após a implantação, teste `https://SEU-SERVICO.onrender.com/api/health` e configure essa URL em `EXPO_PUBLIC_API_URL` no ambiente do aplicativo.
+
+## Verificação de TypeScript
+
+Para verificar os tipos antes de executar ou entregar o projeto:
+
+```bash
+npx tsc --noEmit
+```
+
+O comando deve terminar sem apresentar erros.
+
+## Gerar APK Android
+
+O perfil `preview` do arquivo `eas.json` está configurado para distribuição interna em formato APK. Com o EAS CLI configurado e o projeto associado à conta EAS, execute:
+
+```bash
+eas build --platform android --profile preview
+```
+
+Siga as instruções do EAS para concluir a compilação e obter o APK.
+
+## Estrutura principal
 
 ```text
 App.tsx
 api/
-  server.js       API Express conectada ao Neon
-  schema.sql      schema compatível com o desktop
-  .env.example    modelo das variáveis privadas do servidor
+  server.js
+  schema.sql
+  .env.example
 src/
+  banco/
+    persistenciaPetCare.ts
   servicos/
-    petcareApi.ts cliente HTTP usado pelas quatro abas
-    pets.ts       adaptador mantido para o contexto legado
-  componentes/
-    Botao.tsx e Campo.tsx componentes reutilizados e alinhados ao desktop
+    petcareApi.ts
   telas/
-    TelaPetCare.tsx interface principal (Tutores, Pets, Consultas e Buscar)
-  tema/tema.ts    cores alinhadas ao projeto desktop
+    TelaPetCare.tsx
+    TelaSobre.tsx
+  tema/
+    tema.ts
+docs/
+  roteiro_de_teste.md
 ```
 
-`src/supabase/squema.sql` permanece no projeto como arquivo histórico da implementação anterior, mas não é utilizado pela nova aplicação. O aplicativo e a API passam a usar o Neon configurado no servidor.
+Os nomes de arquivos podem incluir outros componentes e módulos auxiliares além dos itens principais mostrados acima.
 
-## 5. Observações
+## Segurança e observações
 
-- O banco precisa estar acessível pela internet (Neon), mas o telefone só precisa alcançar a API no computador pela rede Wi-Fi.
-- A API valida os campos e impede excluir tutor com pets ou pet com consultas vinculadas, seguindo as regras do desktop.
-- A exclusão de uma consulta é permitida, assim como no desktop.
-- O arquivo `api/.env` e o `.env.local` da raiz não devem ser enviados ao GitHub. Nunca compartilhe a senha ou a URL completa com credenciais.
+- Não coloque `DATABASE_URL` no aplicativo nem em variáveis `EXPO_PUBLIC_*`.
+- Não envie `api/.env` ou `.env.local` ao GitHub. Esses arquivos devem permanecer ignorados pelo Git.
+- A API atual não implementa autenticação de usuários. Portanto, use apenas dados fictícios em demonstrações públicas e não cadastre informações pessoais reais até que autenticação e autorização sejam implementadas.
+- A API precisa estar acessível para realizar operações remotas e sincronizar a fila local.
+- O SQLite é uma persistência por dispositivo; limpar os dados do aplicativo pode remover cache e cadastros ainda não sincronizados.
+
+## Roteiro de testes
+
+Os resultados conhecidos e as limitações verificadas estão registrados em [`docs/roteiro_de_teste.md`](docs/roteiro_de_teste.md).

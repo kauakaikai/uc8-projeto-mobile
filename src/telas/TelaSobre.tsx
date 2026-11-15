@@ -1,65 +1,80 @@
-import { useCallback, useState } from "react";
-import {
-  PixelRatio,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { contarLocal } from "../banco/banco";
-import { registrarErro } from "../erros/erros";
-import { cores, espacos } from "../tema/tema";
+import { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { contarLocal } from '../banco/banco';
 
 export function TelaSobre() {
-  const { width, height, fontScale } = useWindowDimensions();
-  const [guardados, setGuardados] = useState("...");
+  const [totalLocal, setTotalLocal] = useState<number | null>(null);
 
-  useFocusEffect(
-    useCallback(() => {
-      let cancelado = false;
-      contarLocal()
-        .then((total) => {
-          if (!cancelado) {
-            setGuardados(String(total));
-          }
-        })
-        .catch((erro: unknown) => {
-          registrarErro("contagem", erro);
-          if (!cancelado) {
-            setGuardados("indisponível");
-          }
-        });
-      return () => {
-        cancelado = true;
-      };
-    }, []),
-  );
+  useEffect(() => {
+    contarLocal()
+      .then(setTotalLocal)
+      .catch(() => setTotalLocal(null));
+  }, []);
 
   return (
-    <View style={estilos.tela}>
-      <Text style={estilos.titulo}>PetCare</Text>
-      <Text>
-        Aplicativo da UC8: lista, cadastro e detalhe de pets de uma clínica
-        veterinária.
-      </Text>
-      <Text style={estilos.medida}>
-        Janela: {Math.round(width)} x {Math.round(height)} dp
-      </Text>
-      <Text style={estilos.medida}>Densidade: {PixelRatio.get()}x</Text>
-      <Text style={estilos.medida}>Escala da fonte: {fontScale}</Text>
-      <Text style={estilos.medida}>Guardados no aparelho: {guardados}</Text>
-    </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.hero}>
+        <Text style={styles.paw}>🐾</Text>
+        <Text style={styles.title}>PetCare</Text>
+        <Text style={styles.subtitle}>Sua clínica com carinho de verdade</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.heading}>Sobre o aplicativo</Text>
+        <Text style={styles.body}>
+          A PetCare é um aplicativo de apoio à gestão veterinária. Ele reúne
+          o cadastro de tutores, o cadastro de pets, o histórico de consultas
+          e a busca de animais.
+        </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.heading}>Tecnologias utilizadas</Text>
+        <Text style={styles.body}>• React Native, Expo e TypeScript</Text>
+        <Text style={styles.body}>• API Node.js e Express</Text>
+        <Text style={styles.body}>• PostgreSQL hospedado no Neon</Text>
+        <Text style={styles.body}>• API publicada no Render</Text>
+        <Text style={styles.body}>• SQLite para armazenamento local legado</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.heading}>Armazenamento local</Text>
+        <Text style={styles.body}>
+          Registros de pets encontrados no banco local: {
+            totalLocal === null ? 'indisponível' : totalLocal
+          }
+        </Text>
+        <Text style={styles.note}>
+          Esta contagem representa somente a tabela local de pets existente.
+          Ela não significa que todos os módulos já estejam disponíveis offline.
+        </Text>
+      </View>
+
+      <Text style={styles.footer}>PetCare Mobile · Projeto acadêmico UC8</Text>
+    </ScrollView>
   );
 }
 
-const estilos = StyleSheet.create({
-  tela: { flex: 1, backgroundColor: cores.fundo, padding: espacos.md },
-  titulo: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: espacos.md,
-    color: cores.texto,
+const styles = StyleSheet.create({
+  container: { padding: 20, paddingBottom: 36, gap: 14 },
+  hero: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    backgroundColor: '#EAF4ED',
+    borderRadius: 20,
   },
-  medida: { marginTop: espacos.sm, color: cores.textoSecundario },
+  paw: { fontSize: 42 },
+  title: { color: '#205B3B', fontSize: 30, fontWeight: '900', marginTop: 4 },
+  subtitle: { color: '#617568', fontWeight: '600', marginTop: 4 },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#DCE9DF',
+  },
+  heading: { color: '#205B3B', fontSize: 17, fontWeight: '800', marginBottom: 10 },
+  body: { color: '#34463A', fontSize: 14, lineHeight: 22 },
+  note: { color: '#7B6252', fontSize: 12, lineHeight: 18, marginTop: 8 },
+  footer: { color: '#829187', textAlign: 'center', fontSize: 12, marginTop: 8 },
 });
