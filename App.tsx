@@ -1,29 +1,14 @@
-import { NavigationContainer } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { PetsProvedor } from "./src/contexto/PetsContexto";
-import { PilhaPets } from "./src/navegacao/pilhaspets";
-import type { RotasDasAbas } from "./src/navegacao/tipos";
-import { TelaSobre } from "./src/telas/TelaSobre";
-
-const Abas = createBottomTabNavigator<RotasDasAbas>();
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { TelaPetCare } from './src/telas/TelaPetCare';
 
 export default function App() {
   return (
-    <PetsProvedor>
-      <NavigationContainer>
-        <Abas.Navigator>
-          <Abas.Screen
-            name="AbaPets"
-            component={PilhaPets}
-            options={{ title: "Pets", headerShown: false }}
-          />
-          <Abas.Screen
-            name="AbaSobre"
-            component={TelaSobre}
-            options={{ title: "Sobre" }}
-          />
-        </Abas.Navigator>
-      </NavigationContainer>
-    </PetsProvedor>
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#F6FAF7' }} edges={['top', 'bottom']}>
+        <StatusBar style="dark" />
+        <TelaPetCare />
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }

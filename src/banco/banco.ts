@@ -116,6 +116,7 @@ export function guardarPendente(dados: DadosNovoPet): Promise<Pendente> {
     return {
       id: resultado.lastInsertRowId,
       nome: dados.nome,
+      especie: dados.especie,
       raca: dados.raca,
     };
   });

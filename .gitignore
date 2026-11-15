@@ -2,6 +2,7 @@
 
 # dependencies
 node_modules/
+api/node_modules/
 
 # Expo
 .expo/
@@ -31,6 +32,12 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
+.env.*
+!.env.example
+api/.env
+api/.env.*
+!api/.env.example
 .env*.local
 
 # typescript

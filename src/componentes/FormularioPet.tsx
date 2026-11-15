@@ -1,21 +1,35 @@
 import { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+
 import { Botao } from "./Botao";
 import { Campo } from "./Campo";
-import { espacos } from "../tema/tema";
+import { cores, espacos, raio } from "../tema/tema";
+import type { Especie } from "../tipos/entidades";
 
 export interface DadosPet {
   nome: string;
   raca: string;
+  especie: Especie;
 }
 
 interface FormularioPetProps {
   aoAdicionar: (dados: DadosPet) => void;
+  inicial?: DadosPet;
+  rotuloDoBotao?: string;
 }
 
-export function FormularioPet({ aoAdicionar }: FormularioPetProps) {
-  const [nome, setNome] = useState("");
-  const [raca, setRaca] = useState("");
+const ESPECIES: Especie[] = ["cachorro", "gato", "ave", "outro"];
+
+export function FormularioPet({
+  aoAdicionar,
+  inicial,
+  rotuloDoBotao = "Adicionar",
+}: FormularioPetProps) {
+  const [nome, setNome] = useState(inicial?.nome ?? "");
+  const [raca, setRaca] = useState(inicial?.raca ?? "");
+  const [especie, setEspecie] = useState<Especie>(
+    inicial?.especie ?? "cachorro",
+  );
   const [tocado, setTocado] = useState(false);
 
   const nomeVazio = nome.trim() === "";
@@ -27,24 +41,108 @@ export function FormularioPet({ aoAdicionar }: FormularioPetProps) {
   }
 
   function enviar() {
-    aoAdicionar({ nome: nome.trim(), raca });
-    setNome("");
-    setRaca("");
-    setTocado(false);
+    aoAdicionar({
+      nome: nome.trim(),
+      raca,
+      especie,
+    });
+
+    if (inicial === undefined) {
+      setNome("");
+      setRaca("");
+      setEspecie("cachorro");
+      setTocado(false);
+    }
   }
 
   return (
     <View style={estilos.formulario}>
       <Campo rotulo="Nome" valor={nome} aoMudar={mudarNome} erro={erroNome} />
+
+      <View style={estilos.grupo}>
+        <Text style={estilos.rotulo}>Espécie</Text>
+
+        <View style={estilos.opcoes}>
+          {ESPECIES.map((item) => {
+            const selecionada = item === especie;
+
+            return (
+              <Pressable
+                key={item}
+                onPress={() => setEspecie(item)}
+                style={[estilos.opcao, selecionada && estilos.opcaoSelecionada]}
+              >
+                <Text
+                  style={[
+                    estilos.textoOpcao,
+                    selecionada && estilos.textoSelecionado,
+                  ]}
+                >
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
       <Campo rotulo="Raça (opcional)" valor={raca} aoMudar={setRaca} />
+
       <View style={estilos.acoes}>
-        <Botao titulo="Adicionar" onPress={enviar} desabilitado={nomeVazio} />
+        <Botao
+          titulo={rotuloDoBotao}
+          onPress={enviar}
+          desabilitado={nomeVazio}
+        />
       </View>
     </View>
   );
 }
 
 const estilos = StyleSheet.create({
-  formulario: { marginBottom: espacos.md },
-  acoes: { flexDirection: "row", marginTop: espacos.sm },
+  formulario: {
+    marginBottom: espacos.md,
+  },
+
+  grupo: {
+    marginBottom: espacos.sm,
+  },
+
+  rotulo: {
+    color: cores.textoSecundario,
+    marginBottom: espacos.xs,
+  },
+
+  opcoes: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: espacos.sm,
+  },
+
+  opcao: {
+    backgroundColor: cores.superficie,
+    borderWidth: 1,
+    borderColor: cores.primaria,
+    borderRadius: raio,
+    paddingHorizontal: espacos.md,
+    paddingVertical: espacos.sm,
+  },
+
+  opcaoSelecionada: {
+    backgroundColor: cores.primaria,
+  },
+
+  textoOpcao: {
+    color: cores.primaria,
+    fontWeight: "bold",
+  },
+
+  textoSelecionado: {
+    color: cores.textoClaro,
+  },
+
+  acoes: {
+    flexDirection: "row",
+    marginTop: espacos.sm,
+  },
 });

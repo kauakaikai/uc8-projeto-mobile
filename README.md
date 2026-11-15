@@ -1,97 +1,113 @@
-# uc8-projeto-mobile
+# 🐾 PetCare Mobile — UC8
 
-Aplicativo mobile da UC8 "Desenvolver aplicações mobile" (SENAC RN Mossoró), em React Native com Expo e TypeScript.
+Aplicativo mobile da PetCare, refeito para acompanhar os módulos do projeto desktop da UC5. Desenvolvido com **React Native, Expo e TypeScript**. A interface mantém a identidade visual do desktop e se adapta a telas de celular; o aplicativo continua abrindo pelo **Expo Go**.
 
-## Sistema de origem
+## Funcionalidades
 
-O tema é o PetCare, sistema de clínica veterinária desenvolvido na UC5 (desktop, com clientes, pets e consultas), reduzido para caber nas 140 horas da unidade.
+- **Tutores:** cadastrar, listar, editar e excluir tutores (nome, telefone e e-mail).
+- **Pets:** selecionar um tutor e cadastrar, listar, editar e excluir seus pets (nome, espécie e raça).
+- **Consultas:** selecionar tutor e pet, registrar, listar, editar e excluir consultas (data, hora, sintomas/descrição e valor).
+- **Buscar:** localizar pets pelo nome do pet ou do tutor e filtrar os resultados por espécie.
+- Mensagens de validação e tratamento de erros nas operações.
 
-## Recorte
+O mobile utiliza os mesmos nomes de tabelas e os mesmos campos definidos no projeto desktop: `clientes`, `pets` e `consultas`.
 
-**Entidade central: Pet.** O aplicativo trabalha ponta a ponta com ela: nuvem, aparelho e fila de envio.
+## Arquitetura e segurança
 
-| Entidade | Campos usados pelo aplicativo                                                                              |
-| -------- | ---------------------------------------------------------------------------------------------------------- |
-| **Pet**  | id, nome, espécie (`cachorro`, `gato`, `ave` ou `outro`), raça (opcional), clienteId (referência ao tutor) |
+O aplicativo Expo **não conecta diretamente ao PostgreSQL** e não contém a senha do banco. A comunicação passa por uma pequena API Node.js/Express (`api/`), que utiliza `pg` e a `DATABASE_URL` do Neon no servidor. As consultas SQL são parametrizadas.
 
-`Cliente` e `Consulta` continuam tipadas em `src/tipos/entidades.ts`, mas não têm tela neste recorte: o tutor aparece só como referência (`clienteId`) e a consulta ficou fora.
-
-> Mudança de recorte: o recorte inicial (módulo 1) previa também a tela _nova consulta_. Ela saiu para que o Pet fosse entregue completo, com nuvem, cache e fila. O README e os tipos acompanham essa mudança.
-
-**Telas:**
-
-1. **Lista de pets** (aba Pets): mostra os pets em uma coluna no celular e em duas em janela larga, com os estados carregando, erro e pronto, e os botões _Recarregar_ e _Novo pet_.
-2. **Detalhe do pet**: abre pelo toque em _Ver detalhes_, levando só o `id` como parâmetro tipado.
-3. **Novo pet**: formulário com nome (obrigatório) e raça; mostra a recusa do servidor quando ela acontece.
-4. **Sobre** (aba Sobre): dados da janela, densidade e escala da fonte, e quantos pets estão guardados no aparelho.
-
-**O que fica de fora:** usuários e permissões, relatórios gerenciais, tela de consultas, gestão de clientes e edição ou exclusão de pets.
-
-## Como funciona
-
-- **Nuvem:** tabela `pets` no Supabase, lida e gravada por `fetch` na API de dados (HTTPS). O papel `anon` só lê e inclui (`supabase/esquema.sql`).
-- **Aparelho:** `expo-sqlite` guarda uma cópia dos pets e a fila de cadastros pendentes (`src/banco/banco.ts`).
-- **Sem rede:** a lista vem do aparelho, com o aviso do motivo. Um cadastro feito sem rede entra na fila (`A enviar (n)`) e é enviado na próxima abertura ou ao tocar em _Recarregar_.
-- **Erros:** classificados em um só lugar (`src/erros/erros.ts`); a tela mostra a mensagem para quem usa e o console recebe o detalhe técnico.
-- **Dados pessoais:** o aplicativo guarda só dados do pet. Nome, telefone e e-mail do tutor não entram no aparelho nem na nuvem.
-
-## Configuração
-
-O aplicativo lê a URL do projeto e a chave publicável do Supabase de um arquivo `.env.local`, que não vai para o repositório. Copie `.env.example` para `.env.local` e preencha:
-
-```
-EXPO_PUBLIC_SUPABASE_URL=https://xouxkupjvvklyzpyhyur.supabase.co
-EXPO_PUBLIC_SUPABASE_KEY=sb_publishable_COLE-A-SUA-CHAVE-PUBLICAVEL
+```text
+Expo Go (celular)
+      │ HTTP pela rede local
+      ▼
+API Node.js / Express (api/)
+      │ DATABASE_URL (somente no servidor)
+      ▼
+Neon PostgreSQL
 ```
 
-Só a chave publicável vai no aplicativo. A chave secreta e a senha do banco ficam fora do código.
+A API foi preparada para desenvolvimento local e apresentação em rede local. Antes de publicar a API na internet, adicione autenticação e autorização por usuário; não exponha uma API de escrita aberta publicamente.
 
-## Como rodar
+## 1. Preparar o banco Neon
 
-```
+Use o mesmo banco Neon já configurado no projeto desktop. No painel SQL do Neon, execute o conteúdo de `api/schema.sql` caso as tabelas `clientes`, `pets` e `consultas` ainda não existam. Se o schema do desktop já foi executado nesse banco, não precisa executar novamente.
+
+## 2. Iniciar a API
+
+Abra um terminal na pasta `api`:
+
+```bash
+cd api
 npm install
-cp .env.example .env.local
-npx expo start
 ```
 
-No celular, abra o Expo Go e leia o QR Code. No laboratório do SENAC, com o cabo USB:
+Copie `api/.env.example` para `api/.env` e coloque a mesma string `DATABASE_URL` usada no desktop:
 
-```
-adb reverse tcp:8081 tcp:8081
-export REACT_NATIVE_PACKAGER_HOSTNAME=127.0.0.1
-npx expo start
-```
-
-## Testes e qualidade
-
-- `npx tsc --noEmit` termina sem erro e o projeto não usa `any` (`git grep -nw any -- "*.ts" "*.tsx"` não encontra nada).
-- O roteiro de teste, com o resultado de cada caso, está em `docs/roteiro_de_teste.md`.
-
-## APK
-
-O APK sai do EAS Build, com o perfil `preview` do `eas.json` e o pacote Android definido no `app.json`. As variáveis `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_KEY` ficam no painel do projeto na Expo, porque o `.env.local` não vai para o build:
-
-```
-npx eas-cli@latest build -p android --profile preview
+```env
+DATABASE_URL=postgresql://usuario:senha@host/neondb?sslmode=require
+PORT=3000
 ```
 
-## Estrutura
+Inicie o servidor:
 
-```
-App.tsx                 provedor, abas e navegação
-src/banco/              SQLite: cache dos pets e fila de pendentes
-src/componentes/        Botao, Campo, CartaoPet, FormularioPet
-src/contexto/           estado global dos pets (PetsProvedor, usePets)
-src/erros/              classificação e registro de erros
-src/navegacao/          pilha de telas e tipos das rotas
-src/servicos/           acesso à API do Supabase
-src/telas/              TelaPets, TelaDetalhePet, TelaNovoPet, TelaSobre
-src/tema/               cores, espaços e medidas
-src/tipos/              entidades tipadas
-supabase/esquema.sql    tabela, segurança por linha e permissões
-docs/                   roteiro de teste
+```bash
+npm run dev
 ```
 
-## Stack
+O terminal deve informar que a API está disponível na porta 3000. Teste no navegador do computador em `http://localhost:3000/api/health`; deve aparecer `{"status":"ok","servico":"PetCare API"}`.
 
-Expo SDK 57, React Native, TypeScript em modo estrito, React Navigation 7 (pilha e abas), Supabase (API de dados), expo-sqlite e EAS Build.
+## 3. Configurar o Expo Go
+
+Em outro terminal, na raiz do projeto mobile:
+
+```bash
+npm install
+```
+
+Copie `.env.example` para `.env.local`. No valor de `EXPO_PUBLIC_API_URL`, troque `SEU_IP_LOCAL` pelo IPv4 do computador que está executando a API. No Windows, descubra-o com `ipconfig`:
+
+```env
+EXPO_PUBLIC_API_URL=http://192.168.0.15:3000/api
+```
+
+Use o IP real do seu computador, não o exemplo acima. O celular e o computador precisam estar na mesma rede Wi-Fi. Permita o acesso do Node.js na rede privada do Windows, caso o Firewall pergunte.
+
+Inicie o Expo:
+
+```bash
+npx expo start --lan
+```
+
+Abra o Expo Go no celular e leia o QR Code. Mantenha os dois terminais abertos durante o uso (API e Expo).
+
+> Quando alterar `.env.local`, reinicie o Expo limpando o cache: `npx expo start --clear`.
+
+## 4. Estrutura mantida
+
+As pastas e os arquivos que já existiam no projeto mobile foram mantidos. A nova tela principal concentra a navegação e as operações equivalentes às quatro abas do desktop. As telas, componentes, navegação, cache SQLite, contexto e roteiro de testes anteriores continuam no repositório para consulta e reaproveitamento; nenhum deles precisa ser apagado.
+
+```text
+App.tsx
+api/
+  server.js       API Express conectada ao Neon
+  schema.sql      schema compatível com o desktop
+  .env.example    modelo das variáveis privadas do servidor
+src/
+  servicos/
+    petcareApi.ts cliente HTTP usado pelas quatro abas
+    pets.ts       adaptador mantido para o contexto legado
+  componentes/
+    Botao.tsx e Campo.tsx componentes reutilizados e alinhados ao desktop
+  telas/
+    TelaPetCare.tsx interface principal (Tutores, Pets, Consultas e Buscar)
+  tema/tema.ts    cores alinhadas ao projeto desktop
+```
+
+`src/supabase/squema.sql` permanece no projeto como arquivo histórico da implementação anterior, mas não é utilizado pela nova aplicação. O aplicativo e a API passam a usar o Neon configurado no servidor.
+
+## 5. Observações
+
+- O banco precisa estar acessível pela internet (Neon), mas o telefone só precisa alcançar a API no computador pela rede Wi-Fi.
+- A API valida os campos e impede excluir tutor com pets ou pet com consultas vinculadas, seguindo as regras do desktop.
+- A exclusão de uma consulta é permitida, assim como no desktop.
+- O arquivo `api/.env` e o `.env.local` da raiz não devem ser enviados ao GitHub. Nunca compartilhe a senha ou a URL completa com credenciais.

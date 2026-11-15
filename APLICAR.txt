@@ -1,0 +1,12 @@
+PETCARE MOBILE — PACOTE DE ATUALIZAÇÃO
+
+1. Faça uma cópia de segurança da pasta local do projeto uc8-projeto-mobile.
+2. Extraia o conteúdo deste ZIP diretamente na raiz da pasta do projeto mobile.
+3. Quando o Windows perguntar, escolha substituir os arquivos com o mesmo nome.
+4. Nenhum arquivo ou pasta original deve ser apagado; este ZIP contém somente arquivos novos e arquivos que devem ser atualizados.
+5. Siga o README.md atualizado para configurar api/.env, .env.local e iniciar API + Expo Go.
+
+IMPORTANTE:
+- A senha do Neon fica somente em api/.env no computador que executa a API.
+- Não envie api/.env nem .env.local para o GitHub.
+- Configure EXPO_PUBLIC_API_URL com o IPv4 real do computador para o celular alcançar a API.
