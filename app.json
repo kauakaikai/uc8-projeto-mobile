@@ -1,20 +1,18 @@
 {
   "expo": {
-    "name": "uc8-projeto-mobile",
+    "name": "PetCare",
     "slug": "uc8-projeto-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/petcare-logo.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#F6FAF7",
+        "foregroundImage": "./assets/petcare-icon.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.kauakaikai.petcare"
@@ -22,10 +20,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-status-bar",
-      "expo-sqlite"
-    ],
+    "plugins": ["expo-status-bar", "expo-sqlite"],
     "extra": {
       "eas": {
         "projectId": "54185283-49c3-485f-9358-a3f123718ff9"
