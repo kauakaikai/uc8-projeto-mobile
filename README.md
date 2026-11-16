@@ -134,15 +134,18 @@ npx tsc --noEmit
 
 O comando deve terminar sem apresentar erros.
 
-## Gerar APK Android
+## APK Android — versão para entrega
 
-O perfil `preview` do arquivo `eas.json` está configurado para distribuição interna em formato APK. Com o EAS CLI configurado e o projeto associado à conta EAS, execute:
+Aplicativo compilado com sucesso pelo EAS Build em 15/11/2026.
 
-```bash
-eas build --platform android --profile preview
-```
+- **Perfil:** preview
+- **Plataforma:** Android
+- **Version code:** 3
 
-Siga as instruções do EAS para concluir a compilação e obter o APK.
+**Links para download e consulta:**
+
+- [Acessar página do build no EAS](https://expo.dev/accounts/kauakaikai/projects/uc8-projeto-mobile/builds/4fe253f2-4f7a-4425-b8eb-262f700f172f)
+- [Baixar APK PetCare](https://expo.dev/artifacts/eas/UVrPcFkKn3UqieHZ9-F1056rDklV87kIXpI9carkw-M.apk)
 
 ## Estrutura principal
 
